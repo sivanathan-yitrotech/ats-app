@@ -2,47 +2,84 @@ import React, { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import Cookies from "js-cookie";
+import axios from "axios";
+import Config from "@/config.json";
+import { useNavigate } from "react-router-dom";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setErrors] = useState("");
+  const [error, setError] = useState("");
+
+  const navigate = useNavigate();
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Reset error messages on every submit attempt
-    setErrors("");
+    setError("");
 
     // Validation
-    let valid = true;
-
     if (!email) {
-      setErrors("Please enter your email address.");
-      return false;
-      valid = false;
-    } else {
-      // Basic email validation regex
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        setErrors(
-          "The email address you entered is invalid. Please try again."
-        );
-        return false;
-        valid = false;
-      }
+      setError("Please enter your email address.");
+      return; // return early to avoid further execution
+    }
+
+    // Basic email validation regex
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError("The email address you entered is invalid. Please try again.");
+      return;
     }
 
     if (!password) {
-      setErrors("Please enter your password.");
-      return false;
-      valid = false;
+      setError("Please enter your password.");
+      return;
     }
 
-    if (valid) {
-      // Handle login logic here (e.g., send data to backend)
-      console.log("Logging in with", email, password);
-    }
+    // // Make the API call if validation passes
+    // axios.post(Config.api_endpoint + "/auth/login", { email, password })
+    //   .then((response) => {
+    //     if (response.status === 200) {
+    //       const token = response.data.token;
+    //       const user = response.data.user;
+    //       Cookies.set("token", token, { expires: 1 });
+    //       Cookies.set("user", JSON.stringify(user), { expires: 1 });
+    //       window.location.href = "/dashboard";
+    //     }
+    //   })
+    //   .catch((error) => {
+    //     if (error.response) {
+    //       // Server responded with an error status
+    //       setError(error.response.data.message);
+    //     } else if (error.request) {
+    //       // No response from the server
+    //       setError("No response from server. Please try again later.");
+    //     } else {
+    //       // Other errors
+    //       setError("An error occurred. Please try again.");
+    //     }
+    //   });
+    const user = {
+      id: 1,
+      role: "manager",
+      name: "Manager",
+      email: "manager@mailinator.com",
+      phone_number: "9834234234",
+    };
+    Cookies.set(
+      "token",
+      "UGo7Klyjp5Ag96agHfH61axCsE7FacQGgerKSRumVevTHUM0BjE9sWUVPQ01GZJT",
+      { expires: 1 }
+    );
+    Cookies.set("user", JSON.stringify(user), { expires: 1 });
+    window.location.href = "/";
+  };
+
+  const handleReset = () => {
+    setEmail("");
+    setPassword("");
+    setError(""); // clear error message
   };
 
   return (
@@ -84,7 +121,12 @@ const Login = () => {
           </div>
           <div className="flex flex-col sm:flex-row justify-between gap-2">
             <Label className="text-[#0044A3] sm:w-[30%]"></Label>
-            <a className="text-[12px] text-[#0044A3] cursor-pointer underline">Forget Password?</a>
+            <a
+              onClick={() => navigate("/forget-password")}
+              className="text-[12px] text-[#0044A3] cursor-pointer underline"
+            >
+              Forget Password?
+            </a>
           </div>
           <div className="text-center text-[#0044A3] mt-2">
             {error && (
@@ -95,11 +137,7 @@ const Login = () => {
             <Button
               type="button"
               className="bg-white rounded-[3px] cursor-pointer hover:bg-neutral-300 border-1 border-[#64748B] text-[#64748B]"
-              onClick={() => {
-                setEmail("");
-                setPassword("");
-                setErrors("");
-              }}
+              onClick={handleReset} // used handleReset function here
             >
               Reset
             </Button>

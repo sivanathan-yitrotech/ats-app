@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 const ForgetPassword = () => {
   const [email, setEmail] = useState("");
@@ -36,6 +37,8 @@ const ForgetPassword = () => {
       console.log(email);
     }
   };
+
+  const navigate = useNavigate();
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -72,6 +75,7 @@ const ForgetPassword = () => {
           </div>
           <div className="flex flex-row gap-6 justify-center mb-4">
             <Button
+              onClick={() => navigate("/")}
               type="button"
               className="bg-white rounded-[3px] cursor-pointer hover:bg-neutral-300 border-1 border-[#64748B] text-[#64748B]"
             >

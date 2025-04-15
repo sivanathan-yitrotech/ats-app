@@ -46,7 +46,7 @@ const jobPostings = Array(10)
     status: "Active",
   }));
 
-const JobPosting = () => {
+const Invoices = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -368,4 +368,4 @@ const InputField = ({
   </div>
 );
 
-export default JobPosting;
+export default Invoices;
