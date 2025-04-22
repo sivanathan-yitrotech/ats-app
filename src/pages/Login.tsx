@@ -64,7 +64,7 @@ export default function Login() {
     //   });
     const user = {
       id: 1,
-      role: "manager",
+      role: "recruiter",
       name: "Manager",
       email: "manager@mailinator.com",
       phone_number: "9834234234",

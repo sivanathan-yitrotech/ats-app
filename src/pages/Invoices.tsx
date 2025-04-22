@@ -1,10 +1,15 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Pencil, Trash2, Search, Download } from "lucide-react";
+import {
+  Plus,
+  ChevronsUpDown,
+  Menu,
+  Check,
+  Pencil,
+  Download,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -23,18 +28,35 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandGroup,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationPrevious,
+  PaginationNext,
+} from "@/components/ui/pagination";
+import { Badge } from "@/components/ui/badge";
 
-// Constants for styling
 const tableHeaderClass = "text-[#0044A3] font-semibold text-sm py-3 px-6";
 const cellClass = "text-sm font-medium text-gray-700 py-3 px-6";
-const buttonClass =
-  "bg-[#0044A3] rounded-[3px] cursor-pointer hover:bg-blue-950";
-const jobTypes = ["On-Site", "Hybrid", "Remote"];
-const jobPostings = Array(10)
+
+// Sample clients data
+const invoices = Array(10)
   .fill(null)
   .map((_, i) => ({
     clientName: `Client ${i + 1}`,
@@ -43,72 +65,165 @@ const jobPostings = Array(10)
     invoiceAmount: `$${(Math.random() * 10000).toFixed(2)}`,
     recruiter: `Recruiter ${i + 1}`,
     dateIssued: `2023-09-${i + 1}`,
-    status: i % 2 === 0 ? "Paid" : "Pending",
+    status: i % 2 === 0 ? "Completed" : "Pending",
   }));
+
+interface Client {
+  clientName: string;
+  candidateName: string;
+  jobTitle: string;
+  invoiceAmount: string;
+  recruiter: string;
+  status: string;
+  dateIssued: string;
+}
 
 const Invoices = () => {
   const [isOpen, setIsOpen] = useState(false);
-
   return (
     <div className="p-4">
-      <HeaderSection setIsOpen={setIsOpen} />
-      <TableSection data={jobPostings} />
-      <AddJobTitleDialog isOpen={isOpen} setIsOpen={setIsOpen} />
+      <div className="flex flex-col items-center mb-6">
+        <h1 className="text-lg font-bold text-[#475569]">Manage Invoices</h1>
+        <p className="text-sm text-[#475569] mt-2 text-center">
+          Simplify billing and stay on top of client payments — all from one
+          place.
+        </p>
+      </div>
+      <CardSection data={invoices} setIsOpen={setIsOpen} />
+      <PaginationSection />
+      <UpdateStatusDialog isOpen={isOpen} setIsOpen={setIsOpen} />
     </div>
   );
 };
 
-const HeaderSection = ({
+const CardSection = ({
+  data,
   setIsOpen,
 }: {
+  data: Client[];
+  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+}) => {
+  const [open, setOpen] = useState(false);
+  const [value, setValue] = useState<string>("");
+  const [active, setActive] = useState("0");
+
+  const sortBy = [
+    { value: "a-z", label: "A-Z" },
+    { value: "z-a", label: "Z-A" },
+    { value: "newest", label: "Newest First" },
+    { value: "oldest", label: "Oldest First" },
+    { value: "last_updated", label: "Last Updated" },
+  ];
+
+  return (
+    <>
+      <div className="overflow-x-auto flex justify-between gap-4">
+        <div className="flex items-center gap-7 mb-4 bg-[#F1F5F9] rounded-lg p-2">
+          {[
+            { label: "All Invoices", value: 50, color: "bg-blue-400" },
+            { label: "Pending", value: 40, color: "bg-yellow-400" },
+            { label: "Completed", value: 10, color: "bg-green-400" },
+          ].map(({ label, value, color }, idx) => (
+            <div
+              key={idx}
+              className={`cursor-pointer flex items-center gap-2 ${
+                active === String(idx) ? "toggle-active" : ""
+              }`}
+              onClick={() => setActive(String(idx))}
+            >
+              {idx === 0 && <Menu className="h-4 w-4" />}
+              <p className="text-[#475569] text-sm flex items-center gap-1">
+                {label}
+                <Badge className={`${color} rounded-full`}>{value}</Badge>
+              </p>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-4 py-1 mb-4">
+          <Input
+            type="text"
+            placeholder="Search"
+            className="w-[200px] placeholder:text-[12px] px-4 py-5"
+            onChange={(e) => console.log(e.target.value)} // Placeholder for search logic
+          />
+          <SortBy
+            open={open}
+            setOpen={setOpen}
+            value={value}
+            setValue={setValue}
+            sortBy={sortBy}
+          />
+        </div>
+      </div>
+
+      <ClientTable data={data} setIsOpen={setIsOpen} />
+    </>
+  );
+};
+
+const SortBy = ({
+  open,
+  setOpen,
+  value,
+  setValue,
+  sortBy,
+}: {
+  open: boolean;
+  setOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  value: string;
+  setValue: React.Dispatch<React.SetStateAction<string>>;
+  sortBy: { value: string; label: string }[];
+}) => (
+  <Popover open={open} onOpenChange={setOpen}>
+    <PopoverTrigger asChild>
+      <Button variant="outline" className="w-auto justify-between">
+        {value ? sortBy.find((item) => item.value === value)?.label : "Sort By"}
+        <ChevronsUpDown className="opacity-50" />
+      </Button>
+    </PopoverTrigger>
+    <PopoverContent className="w-auto p-0">
+      <Command>
+        <CommandList>
+          <CommandGroup>
+            {sortBy.map((item) => (
+              <CommandItem
+                key={item.value}
+                onSelect={() =>
+                  setValue(item.value === value ? "" : item.value)
+                }
+              >
+                {item.label}
+                <Check
+                  className={`ml-auto ${
+                    value === item.value ? "opacity-100" : "opacity-0"
+                  }`}
+                />
+              </CommandItem>
+            ))}
+          </CommandGroup>
+        </CommandList>
+      </Command>
+    </PopoverContent>
+  </Popover>
+);
+
+const ClientTable = ({
+  data,
+  setIsOpen,
+}: {
+  data: Client[];
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }) => (
-  <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-6">
-    <div className="flex items-center gap-6">
-      <FilterSelect />
-      <SearchBar />
-    </div>
-  </div>
-);
-
-const FilterSelect = () => (
-  <div className="flex items-center gap-2">
-    <Select>
-      <SelectTrigger className="w-[180px]">
-        <SelectValue placeholder="Filter By" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="light" className="text-sm text-gray-500">
-          Job Title - ASC
-        </SelectItem>
-        <SelectItem value="dark" className="text-sm text-gray-500">
-          Job Title - DESC
-        </SelectItem>
-      </SelectContent>
-    </Select>
-  </div>
-);
-
-const SearchBar = () => (
-  <div className="relative w-full md:w-60 max-w-lg">
-    <Input
-      placeholder="Search"
-      className="pl-10 pr-4 py-2 border border-gray-300 rounded-[4px] focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm text-gray-500 placeholder:text-[12px]"
-    />
-    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
-  </div>
-);
-
-const TableSection = ({ data }: { data: Array<any> }) => (
-  <div className="overflow-x-auto rounded-lg">
+  <div className="overflow-x-auto rounded-lg my-3">
     <Table>
       <TableHeader>
-        <TableRow className="border-t-1 border-gray-200">
+        <TableRow>
           <TableHead className={tableHeaderClass}>Client Name</TableHead>
           <TableHead className={tableHeaderClass}>Candidate Name</TableHead>
           <TableHead className={tableHeaderClass}>Job Title</TableHead>
           <TableHead className={tableHeaderClass}>Invoice Amount</TableHead>
-          <TableHead className={tableHeaderClass}>Recruiter</TableHead>
+          {/* <TableHead className={tableHeaderClass}>Recruiter</TableHead> */}
           <TableHead className={tableHeaderClass}>Status</TableHead>
           <TableHead className={tableHeaderClass}>Date Issued</TableHead>
           <TableHead className={tableHeaderClass}>Action</TableHead>
@@ -116,16 +231,18 @@ const TableSection = ({ data }: { data: Array<any> }) => (
       </TableHeader>
       <TableBody>
         {data.map((client, i) => (
-          <TableRow key={i} className="border-t-1 border-gray-200">
+          <TableRow key={i}>
             <TableCell className={cellClass}>{client.clientName}</TableCell>
             <TableCell className={cellClass}>{client.candidateName}</TableCell>
             <TableCell className={cellClass}>{client.jobTitle}</TableCell>
             <TableCell className={cellClass}>{client.invoiceAmount}</TableCell>
-            <TableCell className={cellClass}>{client.recruiter}</TableCell>
+            {/* <TableCell className={cellClass}>{client.recruiter}</TableCell> */}
             <TableCell className={cellClass}>
               <Badge
                 className={
-                  client.status == "Paid" ? "bg-green-500" : "bg-red-500"
+                  client.status == "Completed"
+                    ? "bg-green-400"
+                    : "bg-yellow-400"
                 }
               >
                 {client.status}
@@ -135,14 +252,22 @@ const TableSection = ({ data }: { data: Array<any> }) => (
 
             <TableCell className={cellClass}>
               <div className="flex items-center space-x-3 text-gray-600">
-                <Pencil
-                  className="h-5 w-5 cursor-pointer hover:text-blue-500 transition-colors"
-                  aria-label="Edit Payment Status"
-                />
-                <Download
-                  className="h-5 w-5 cursor-pointer hover:text-red-500 transition-colors"
-                  aria-label="Download Invoice"
-                />
+                <Button
+                  variant="secondary"
+                  className="cursor-pointer"
+                  size="icon"
+                  onClick={() => setIsOpen(true)}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+
+                <Button
+                  variant="secondary"
+                  className="cursor-pointer"
+                  size="icon"
+                >
+                  <Download className="h-4 w-4" />
+                </Button>
               </div>
             </TableCell>
           </TableRow>
@@ -152,223 +277,90 @@ const TableSection = ({ data }: { data: Array<any> }) => (
   </div>
 );
 
-const AddJobTitleDialog = ({
+const UpdateStatusDialog = ({
   isOpen,
   setIsOpen,
 }: {
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
 }) => (
-  <Dialog open={isOpen} onOpenChange={(open) => setIsOpen(open)}>
-    <DialogContent
-      style={{ maxWidth: "80%", maxHeight: "90vh", overflowY: "auto" }}
-    >
+  <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <DialogContent>
       <DialogHeader>
         <DialogTitle className="my-4 text-xl text-[#0044A3] font-bold text-center">
-          Add Job Posting
+          Update Invoice
         </DialogTitle>
-        <DialogDescription>
-          <div className="mt-4 grid grid-cols-2 gap-x-8 gap-y-5">
-            {/* Row 1 */}
-            <div className="flex items-center gap-4">
-              <Label className="text-[#0044A3] w-[50%]">Job Title</Label>
-              <Select name="jobTitle">
-                <SelectTrigger className="w-full placeholder:text-[12px] px-4 py-5">
-                  <SelectValue
-                    placeholder="Select Job Title"
-                    className="text-[12px] px-4 py-5"
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem
-                    value="software-architect"
-                    className="text-[12px] p-2"
-                  >
-                    Software Architect
-                  </SelectItem>
-                  <SelectItem
-                    value="software-engineer"
-                    className="text-[12px] p-2"
-                  >
-                    Software Engineer
-                  </SelectItem>
-                  <SelectItem
-                    value="system-designer"
-                    className="text-[12px] p-2"
-                  >
-                    System Designer
-                  </SelectItem>
-                </SelectContent>
-              </Select>
+        
+        <div className="mt-4 space-y-4">
+          {[
+            { label: "Client Name", value: "YITRO Global" },
+            { label: "Job Posting", value: "UI/UX Designer" },
+            { label: "Candidate Name", value: "Sivanathan T" },
+            { label: "Invoice Amount", value: "$3500" },
+          ].map(({ label, value }) => (
+            <div className="flex justify-start" key={label}>
+              <Label className="text-[#1E293B] w-[50%] font-medium">{label}</Label>
+              <Label className="text-[#0044A3] w-[50%]">{value}</Label>
             </div>
-
-            <div className="flex items-center gap-4">
-              <Label className="text-[#0044A3] w-[50%]">Position Count</Label>
-              <Input
-                name="positionCount"
-                placeholder="Enter the Position Count"
-                className="w-full placeholder:text-[12px] px-4 py-5"
-              />
-            </div>
-
-            {/* Row 2 */}
-            <div className="flex items-center gap-4 col-span-2">
-              <Label className="text-[#0044A3] w-[18%]">Description</Label>
-              <Input
-                name="description"
-                placeholder="Enter the Description"
-                className="w-full placeholder:text-[12px] px-4 py-5"
-              />
-            </div>
-
-            {/* Row 3 */}
-            <div className="flex items-center gap-4 col-span-2">
-              <Label className="text-[#0044A3] w-[18%]">Job Description</Label>
-              <Input
-                type="file"
-                name="descriptionFile"
-                placeholder="Upload the Job Description"
-                className="w-full placeholder:text-[12px]"
-              />
-            </div>
-
-            <div className="flex items-center gap-4">
-              <Label className="text-[#0044A3] w-[50%]">Required Skills</Label>
-              <Input
-                name="skills"
-                placeholder="Enter the Required Skills"
-                className="w-full placeholder:text-[12px] px-4 py-5"
-              />
-            </div>
-
-            {/* Row 4 */}
-            <div className="flex items-center gap-4">
-              <Label className="text-[#0044A3] w-[50%]">Job Type</Label>
-              <Select name="jobType">
-                <SelectTrigger className="w-full placeholder:text-[12px] px-4 py-5">
-                  <SelectValue placeholder="Select Job Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="On-Site">On-Site</SelectItem>
-                  <SelectItem value="Hybrid">Hybrid</SelectItem>
-                  <SelectItem value="Remote">Remote</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <Label className="text-[#0044A3] w-[50%]">Experience</Label>
-              <Input
-                name="experience"
-                placeholder="Enter the Experience"
-                className="w-full placeholder:text-[12px] px-4 py-5"
-              />
-            </div>
-
-            {/* Row 5 */}
-            <div className="flex items-center gap-4">
-              <Label className="text-[#0044A3] w-[50%]">Job Location</Label>
-              <Input
-                name="jobLocation"
-                placeholder="Enter the Job Location"
-                className="w-full placeholder:text-[12px] px-4 py-5"
-              />
-            </div>
-
-            <div className="flex items-center gap-4">
-              <Label className="text-[#0044A3] w-[50%]">
-                Expected Joining Date
-              </Label>
-              <Input
-                type="date"
-                name="joiningDate"
-                className="w-full placeholder:text-[12px] px-4 py-5"
-              />
-            </div>
-
-            {/* Row 6 */}
-            <div className="flex items-center gap-4">
-              <Label className="text-[#0044A3] w-[50%]">Assign Recruiter</Label>
-              <Select name="assignRecruiter">
-                <SelectTrigger className="w-full placeholder:text-[12px] px-4 py-5">
-                  <SelectValue placeholder="Select Recruiter" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="recruiter-1">Recruiter 1</SelectItem>
-                  <SelectItem value="recruiter-2">Recruiter 2</SelectItem>
-                  <SelectItem value="recruiter-3">Recruiter 3</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <Label className="text-[#0044A3] w-[50%]">CTC</Label>
-              <Input
-                name="ctc"
-                placeholder="Enter the CTC"
-                className="w-full placeholder:text-[12px] px-4 py-5"
-              />
-            </div>
-
-            {/* Row 7 */}
-            <div className="flex items-center gap-4">
-              <Label className="text-[#0044A3] w-[50%]">Commission Type</Label>
-              <Select name="commissionType">
-                <SelectTrigger className="w-full placeholder:text-[12px] px-4 py-5">
-                  <SelectValue placeholder="Select Commission Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="fixed">Fixed</SelectItem>
-                  <SelectItem value="percentage">Percentage</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <Label className="text-[#0044A3] w-[50%]">Commission Value</Label>
-              <Input
-                name="commissionValue"
-                placeholder="Enter Commission Value"
-                className="w-full placeholder:text-[12px] px-4 py-5"
-              />
-            </div>
-
-            {/* Buttons */}
-            <div className="col-span-2 flex justify-center gap-6 my-7">
-              <Button className={buttonClass}>Save</Button>
-              <Button
-                onClick={() => setIsOpen(false)}
-                className="bg-white rounded-[3px] cursor-pointer hover:bg-neutral-300 border border-[#64748B] text-[#64748B]"
-              >
-                Cancel
-              </Button>
-            </div>
+          ))}
+          
+          <div className="flex justify-between">
+            <Label className="text-[#1E293B] font-medium">Invoice Date</Label>
+            <Input type="date" name="invoiceDate" className="border border-gray-300 rounded-md p-2 w-full max-w-[50%]" />
           </div>
-        </DialogDescription>
+          
+          <div className="flex justify-between">
+            <Label className="text-[#1E293B] font-medium">Status</Label>
+            <Select name="status" defaultValue="pending">
+              <SelectTrigger className="border border-gray-300 w-[50%] rounded-md p-2">
+                <SelectValue placeholder="Select Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="flex justify-center gap-6 my-6">
+          <Button className="bg-[#0044A3] rounded-[3px] hover:bg-blue-950">
+            Save
+          </Button>
+          <Button
+            onClick={() => setIsOpen(false)}
+            className="bg-white rounded-[3px] hover:bg-neutral-300 border border-[#64748B] text-[#64748B]"
+          >
+            Cancel
+          </Button>
+        </div>
       </DialogHeader>
     </DialogContent>
   </Dialog>
 );
 
-const InputField = ({
-  label,
-  name,
-  placeholder,
-}: {
-  label: string;
-  name: string;
-  placeholder: string;
-}) => (
-  <div className="flex flex-row justify-between">
-    <Label className="text-[#0044A3] w-[50%]">{label}</Label>
-    <Input
-      name={name}
-      type="text"
-      placeholder={placeholder}
-      maxLength={250}
-      className="w-[70%] placeholder:text-[12px] px-4 py-5"
-    />
-  </div>
+const PaginationSection = () => (
+  <Pagination>
+    <PaginationContent>
+      <PaginationItem>
+        <PaginationPrevious href="#" />
+      </PaginationItem>
+      <PaginationItem>
+        <PaginationLink href="#">1</PaginationLink>
+      </PaginationItem>
+      <PaginationItem>
+        <PaginationLink href="#" isActive>
+          2
+        </PaginationLink>
+      </PaginationItem>
+      <PaginationItem>
+        <PaginationLink href="#">3</PaginationLink>
+      </PaginationItem>
+      <PaginationItem>
+        <PaginationNext href="#" />
+      </PaginationItem>
+    </PaginationContent>
+  </Pagination>
 );
 
 export default Invoices;

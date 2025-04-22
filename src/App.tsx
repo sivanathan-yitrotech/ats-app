@@ -13,6 +13,8 @@ import JobPosting from "./pages/JobPosting";
 import ClosedPositions from "./pages/ClosedPositions";
 import Invoices from "./pages/Invoices";
 import CandidatesStatus from "./pages/CandidatesStatus";
+import AssignedPositions from "./pages/AssignedPositions";
+import Interviews from "./pages/Interviews";
 
 // This is the main App component that includes routing.
 const App = () => {
@@ -40,6 +42,8 @@ const App = () => {
               element={<Layout content={ClosedPositions} />}
             />
             <Route path="/invoices" element={<Layout content={Invoices} />} />
+            <Route path="/assigned-positions" element={<Layout content={AssignedPositions} />} />
+            <Route path="/interviews" element={<Layout content={Interviews} />} />
           </>
         ) : (
           <>

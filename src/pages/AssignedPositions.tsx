@@ -19,14 +19,6 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -35,12 +27,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import {
   Popover,
   PopoverContent,
@@ -64,8 +50,6 @@ import { Badge } from "@/components/ui/badge";
 
 const tableHeaderClass = "text-[#0044A3] font-semibold text-sm py-3 px-6";
 const cellClass = "text-sm font-medium text-gray-700 py-3 px-6";
-const buttonClass =
-  "bg-[#0044A3] rounded-[3px] cursor-pointer hover:bg-blue-950";
 const jobTypes = ["On-Site", "Hybrid", "Remote"];
 const status = ["Open", "Close", "Hold"];
 const jobPostings = Array(10)
@@ -90,42 +74,23 @@ interface jobPost {
   status: string;
 }
 
-const JobPosting = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-
+const AssignedPositions = () => {
   return (
     <div className="p-4">
       <div className="flex flex-col items-center mb-6">
-        <h1 className="text-lg font-bold text-[#475569]">Job Postings</h1>
+        <h1 className="text-lg font-bold text-[#475569]">Assigned Positions</h1>
         <p className="text-sm text-[#475569] mt-2 text-center">
-          Create, update, and organize job openings — all in one control center.
+          View, track, and stay on top of every role assigned to you — all in
+          one place.
         </p>
       </div>
-      <CardSection
-        data={jobPostings}
-        setIsOpen={setIsOpen}
-        setIsDeleteOpen={setIsDeleteOpen}
-      />
+      <CardSection data={jobPostings} />
       <PaginationSection />
-      <AddJobPostingDialog isOpen={isOpen} setIsOpen={setIsOpen} />
-      <DeleteDialog
-        isDeleteOpen={isDeleteOpen}
-        setIsDeleteOpen={setIsDeleteOpen}
-      />
     </div>
   );
 };
 
-const CardSection = ({
-  data,
-  setIsOpen,
-  setIsDeleteOpen,
-}: {
-  data: jobPost[];
-  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  setIsDeleteOpen: React.Dispatch<React.SetStateAction<boolean>>;
-}) => {
+const CardSection = ({ data }: { data: jobPost[] }) => {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState<string>("");
   const [active, setActive] = useState("0");
@@ -140,7 +105,7 @@ const CardSection = ({
       company: "For ITG Communications",
       location: "Tennessee",
       remote: "Remote",
-      recruiters: ["https://i.pravatar.cc/300", "https://i.pravatar.cc/301"],
+      assigned_by: ["https://i.pravatar.cc/300"],
       ctc: "10%",
       description:
         "We are looking for a passionate UX Designer to work on enhancing the user experience of our flagship products. You will collaborate closely with product teams to create user-centered designs and conduct usability testing.",
@@ -153,7 +118,7 @@ const CardSection = ({
       company: "For XYZ Technologies",
       location: "California",
       remote: "Hybrid",
-      recruiters: ["https://i.pravatar.cc/300", "https://i.pravatar.cc/301"],
+      assigned_by: ["https://i.pravatar.cc/300"],
       ctc: "15%",
       description:
         "XYZ Technologies is seeking a skilled Frontend Developer to join our team. The ideal candidate will have expertise in JavaScript frameworks and a strong understanding of responsive web design to build and maintain high-performance web applications.",
@@ -166,7 +131,7 @@ const CardSection = ({
       company: "For ABC Solutions",
       location: "New York",
       remote: "Remote",
-      recruiters: ["https://i.pravatar.cc/302", "https://i.pravatar.cc/303"],
+      assigned_by: ["https://i.pravatar.cc/302"],
       ctc: "12%",
       description:
         "As a Product Manager at ABC Solutions, you will drive the product roadmap and collaborate with cross-functional teams to ensure successful product launches. Strong communication and project management skills are essential.",
@@ -179,7 +144,7 @@ const CardSection = ({
       company: "For Creative Agency",
       location: "Texas",
       remote: "In-office",
-      recruiters: ["https://i.pravatar.cc/304", "https://i.pravatar.cc/305"],
+      assigned_by: ["https://i.pravatar.cc/304"],
       ctc: "8%",
       description:
         "Creative Agency is hiring a Graphic Designer to work on a variety of branding, digital, and print design projects. You will collaborate with the creative team to develop visually compelling materials that meet client goals.",
@@ -192,7 +157,7 @@ const CardSection = ({
       company: "For Tech Corp",
       location: "Florida",
       remote: "Remote",
-      recruiters: ["https://i.pravatar.cc/306", "https://i.pravatar.cc/307"],
+      assigned_by: ["https://i.pravatar.cc/306"],
       ctc: "20%",
       description:
         "Tech Corp is looking for a Backend Developer to design and implement server-side logic, database systems, and APIs. You'll play a key role in optimizing the performance of our backend infrastructure.",
@@ -205,7 +170,7 @@ const CardSection = ({
       company: "For DataLabs",
       location: "Illinois",
       remote: "Hybrid",
-      recruiters: ["https://i.pravatar.cc/308", "https://i.pravatar.cc/309"],
+      assigned_by: ["https://i.pravatar.cc/308"],
       ctc: "18%",
       description:
         "DataLabs is seeking a Data Scientist to analyze complex datasets and provide actionable insights. You’ll work closely with product and engineering teams to create predictive models and improve business outcomes.",
@@ -260,13 +225,6 @@ const CardSection = ({
             setValue={setValue}
             sortBy={sortBy}
           />
-          <Button
-            className="cursor-pointer"
-            variant="secondary"
-            onClick={() => setIsOpen(true)}
-          >
-            <Plus className="mr-2 h-4 w-4" /> Add Job Posting
-          </Button>
         </div>
       </div>
       <div className="flex justify-between items-center mb-4">
@@ -289,18 +247,10 @@ const CardSection = ({
         </div>
       </div>
       {listType == "list" ? (
-        <ClientTable
-          data={data}
-          setIsOpen={setIsOpen}
-          setIsDeleteOpen={setIsDeleteOpen}
-        />
+        <ClientTable data={data} />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 cursor-pointer gap-4 pt-3 pb-10">
-          <JobCardSection
-            data={cardData}
-            setIsOpen={setIsOpen}
-            setIsDeleteOpen={setIsDeleteOpen}
-          />
+          <JobCardSection data={cardData} />
         </div>
       )}
     </>
@@ -353,15 +303,7 @@ const SortBy = ({
   </Popover>
 );
 
-const ClientTable = ({
-  data,
-  setIsOpen,
-  setIsDeleteOpen,
-}: {
-  data: jobPost[];
-  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  setIsDeleteOpen: React.Dispatch<React.SetStateAction<boolean>>;
-}) => (
+const ClientTable = ({ data }: { data: jobPost[] }) => (
   <div className="overflow-x-auto rounded-lg my-3">
     <Table>
       <TableHeader>
@@ -373,7 +315,6 @@ const ClientTable = ({
           <TableHead className={tableHeaderClass}>Job Type</TableHead>
           <TableHead className={tableHeaderClass}>Location</TableHead>
           <TableHead className={tableHeaderClass}>Status</TableHead>
-          <TableHead className={tableHeaderClass}>Action</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -398,33 +339,6 @@ const ClientTable = ({
                 {jopPost.status}
               </Badge>
             </TableCell>
-
-            <TableCell className={cellClass}>
-              <div className="flex items-center space-x-3 text-gray-600">
-                <Button
-                  variant="secondary"
-                  className="cursor-pointer"
-                  size="icon"
-                  onClick={() => setIsOpen(true)}
-                >
-                  <Pencil
-                    className="h-5 w-5 cursor-pointer hover:text-blue-500 transition-colors"
-                    aria-label="Edit Job Posting"
-                  />
-                </Button>
-                <Button
-                  variant="secondary"
-                  className="cursor-pointer"
-                  size="icon"
-                  onClick={() => setIsDeleteOpen(true)}
-                >
-                  <Trash2
-                    className="h-5 w-5 cursor-pointer hover:text-red-500 transition-colors"
-                    aria-label="Delete Job Posting"
-                  />
-                </Button>
-              </div>
-            </TableCell>
           </TableRow>
         ))}
       </TableBody>
@@ -432,271 +346,7 @@ const ClientTable = ({
   </div>
 );
 
-const AddJobPostingDialog = ({
-  isOpen,
-  setIsOpen,
-}: {
-  isOpen: boolean;
-  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
-}) => (
-  <Dialog open={isOpen} onOpenChange={(open) => setIsOpen(open)}>
-    <DialogContent
-      style={{ maxWidth: "80%", maxHeight: "90vh", overflowY: "auto" }}
-    >
-      <DialogHeader>
-        <DialogTitle className="my-4 text-xl text-[#0044A3] font-bold text-center">
-          Add Job Posting
-        </DialogTitle>
-        <div className="mt-4 grid grid-cols-2 gap-x-8 gap-y-5">
-          {/* Row 1 */}
-          <InputField
-            label="Job Title"
-            name="jobTitle"
-            placeholder="Enter the Job Title"
-          />
-
-          <div className="flex items-center gap-4">
-            <Label className="text-[#1E293B] w-[30%]">
-              Prefered Experience
-            </Label>
-            <Input
-              name="experience"
-              placeholder="Enter the Experience"
-              className="w-[70%] placeholder:text-[13px] px-4 py-5"
-            />
-          </div>
-
-          <div className="flex items-center gap-4">
-            <Label className="text-[#1E293B] w-[30%]">Client Name</Label>
-            <Select name="clientName">
-              <SelectTrigger className="w-[70%] placeholder:text-[13px] px-4 py-5">
-                <SelectValue placeholder="Select Client" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">Client - 1</SelectItem>
-                <SelectItem value="2">Client - 2</SelectItem>
-                <SelectItem value="3">Client - 3</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <InputField
-            label="CTC(per year)"
-            name="ctc"
-            placeholder="Enter the CTC"
-          />
-
-          <div className="flex items-center gap-4">
-            <Label className="text-[#1E293B] w-[30%]">Country</Label>
-            <Select name="country">
-              <SelectTrigger className="w-[70%] placeholder:text-[13px] px-4 py-5">
-                <SelectValue placeholder="Select Country" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">India</SelectItem>
-                <SelectItem value="2">America</SelectItem>
-                <SelectItem value="3">Canada</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-center gap-4">
-            <Label className="text-[#1E293B] w-[30%]">City</Label>
-            <Select name="city">
-              <SelectTrigger className="w-[70%] placeholder:text-[13px] px-4 py-5">
-                <SelectValue placeholder="Select City" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">City - 1</SelectItem>
-                <SelectItem value="2">City - 2</SelectItem>
-                <SelectItem value="3">City - 3</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <Label className="text-[#1E293B] w-[30%]">Commission Type</Label>
-            <Select name="commissionType">
-              <SelectTrigger className="w-[70%] placeholder:text-[13px] px-4 py-5">
-                <SelectValue placeholder="Select Commission Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="fixed">Fixed</SelectItem>
-                <SelectItem value="percentage">Percentage</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <Label className="text-[#1E293B] w-[30%]">Commission Value</Label>
-            <Input
-              name="commissionValue"
-              placeholder="Enter Commission Value"
-              className="w-[70%] placeholder:text-[13px] px-4 py-5"
-            />
-          </div>
-
-          <div className="flex items-center gap-4">
-            <Label className="text-[#1E293B] w-[30%]">Status</Label>
-            <Select name="status">
-              <SelectTrigger className="w-[70%] placeholder:text-[13px] px-4 py-5">
-                <SelectValue placeholder="Select Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Open">Open</SelectItem>
-                <SelectItem value="Closed">Closed</SelectItem>
-                <SelectItem value="On-Hold">On-Hold</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <Label className="text-[#1E293B] w-[30%]">Work Mode</Label>
-            <Select name="workMode">
-              <SelectTrigger className="w-[70%] placeholder:text-[13px] px-4 py-5">
-                <SelectValue placeholder="Select Work Mode" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="On-Site">On-Site</SelectItem>
-                <SelectItem value="Hybrid">Hybrid</SelectItem>
-                <SelectItem value="Remote">Remote</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <Label className="text-[#1E293B] w-[30%]">Assign Recruiter</Label>
-            <Select name="assignRecruiter">
-              <SelectTrigger className="w-[70%] placeholder:text-[13px] px-4 py-5">
-                <SelectValue placeholder="Select Recruiter" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="recruiter-1">Recruiter 1</SelectItem>
-                <SelectItem value="recruiter-2">Recruiter 2</SelectItem>
-                <SelectItem value="recruiter-3">Recruiter 3</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <Label className="text-[#1E293B] w-[30%]">Position Count</Label>
-            <Input
-              type="number"
-              name="positionCount"
-              placeholder="Enter the Position Count"
-              className="w-[70%] placeholder:text-[13px] px-4 py-5"
-            />
-          </div>
-
-          <div className="flex items-center gap-4">
-            <Label className="text-[#1E293B] w-[30%]">Open Date</Label>
-            <Input
-              name="openDate"
-              type="date"
-              className="w-[70%] placeholder:text-[13px] px-4 py-5"
-            />
-          </div>
-
-          <div className="flex items-center gap-4">
-            <Label className="text-[#1E293B] w-[30%]">Closing Date</Label>
-            <Input
-              name="closingDate"
-              type="date"
-              className="w-[70%] placeholder:text-[13px] px-4 py-5"
-            />
-          </div>
-
-          {/* Row 2 */}
-          <div className="flex items-center gap-4 col-span-2">
-            <Label className="text-[#1E293B] w-[16.5%]">Description</Label>
-            <Input
-              name="description"
-              placeholder="Enter the Description"
-              className="w-full placeholder:text-[13px] px-4 py-5"
-            />
-          </div>
-
-          {/* Row 3 */}
-          <div className="flex items-center gap-4 col-span-2">
-            <Label className="text-[#1E293B] w-[16.5%]">Job Description</Label>
-            <Input
-              type="file"
-              name="descriptionFile"
-              placeholder="Upload the Job Description"
-              className="w-full placeholder:text-[13px]"
-            />
-          </div>
-
-          {/* Buttons */}
-          <div className="col-span-2 flex justify-center gap-6 my-7">
-            <Button className={buttonClass}>Save</Button>
-            <Button
-              onClick={() => setIsOpen(false)}
-              className="bg-white rounded-[3px] cursor-pointer hover:bg-neutral-300 border border-[#64748B] text-[#64748B]"
-            >
-              Cancel
-            </Button>
-          </div>
-        </div>
-      </DialogHeader>
-    </DialogContent>
-  </Dialog>
-);
-
-const DeleteDialog = ({
-  isDeleteOpen,
-  setIsDeleteOpen,
-}: {
-  isDeleteOpen: boolean;
-  setIsDeleteOpen: React.Dispatch<React.SetStateAction<boolean>>;
-}) => (
-  <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-    <DialogContent className="rounded-lg">
-      <DialogHeader>
-        <DialogTitle className="my-1 text-lg text-[#0044A3] text-center">
-          Are You Sure You Want to Delete?
-        </DialogTitle>
-      </DialogHeader>
-      <div className="flex justify-center gap-6 my-3">
-        <Button
-          onClick={() => setIsDeleteOpen(false)}
-          className="bg-red-600 text-white rounded-[3px] hover:bg-red-800"
-        >
-          Delete
-        </Button>
-        <Button
-          onClick={() => setIsDeleteOpen(false)}
-          className="bg-white border border-[#64748B] text-[#64748B] hover:bg-neutral-300"
-        >
-          Cancel
-        </Button>
-      </div>
-    </DialogContent>
-  </Dialog>
-);
-
-const InputField = ({
-  label,
-  name,
-  placeholder,
-  type = "text",
-}: {
-  label: string;
-  name: string;
-  placeholder: string;
-  type?: string;
-}) => (
-  <div className="flex gap-4">
-    <Label className="text-[#1E293B] w-[30%]">{label}</Label>
-    <Input
-      name={name}
-      type={type}
-      placeholder={placeholder}
-      className="w-[70%] placeholder:text-[13px] px-4 py-5"
-    />
-  </div>
-);
-
-const JobCardSection = ({ data, setIsOpen, setIsDeleteOpen }) => {
+const JobCardSection = ({ data }) => {
   const [hoveredIndex, setHoveredIndex] = useState(null);
   const [clickedIndex, setClickedIndex] = useState(null);
 
@@ -723,7 +373,7 @@ const JobCardSection = ({ data, setIsOpen, setIsDeleteOpen }) => {
               <span
                 className={`text-[10px] font-semibold px-3 py-1 rounded-md ${
                   card.status === "OPEN"
-                    ? "bg-indigo-100 text-indigo-600"
+                    ? "bg-green-100 text-green-600"
                     : "bg-red-100 text-red-600"
                 }`}
               >
@@ -732,35 +382,12 @@ const JobCardSection = ({ data, setIsOpen, setIsDeleteOpen }) => {
               <span
                 className={`${
                   card.status === "OPEN"
-                    ? "bg-indigo-50 text-indigo-600"
+                    ? "bg-green-50 text-green-600"
                     : "bg-red-100 text-red-600"
                 } text-xs font-[500] px-3 py-1 rounded-md`}
               >
                 {card.experience}
               </span>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <EllipsisVertical className="h-5 w-5 text-gray-700 cursor-pointer hover:text-gray-600" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-auto bg-white rounded-md shadow-lg p-2">
-                  <DropdownMenuLabel>
-                    <div className="flex flex-col gap-2">
-                      <div
-                        className="flex gap-2 cursor-pointer text-gray-700 hover:text-indigo-500 font-medium"
-                        onClick={setIsOpen}
-                      >
-                        <Pencil className="h-4 w-4" /> Edit
-                      </div>
-                      <div
-                        className="flex gap-2 cursor-pointer text-gray-700 hover:text-red-500 font-medium"
-                        onClick={setIsDeleteOpen}
-                      >
-                        <Trash2 className="h-4 w-4" /> Delete
-                      </div>
-                    </div>
-                  </DropdownMenuLabel>
-                </DropdownMenuContent>
-              </DropdownMenu>
             </div>
 
             <div className="mb-1">
@@ -780,11 +407,9 @@ const JobCardSection = ({ data, setIsOpen, setIsDeleteOpen }) => {
 
             <div className="flex justify-between items-center mt-4">
               <div>
-                <p className="text-xs text-gray-500 mb-1">
-                  Assigned Recruiters
-                </p>
+                <p className="text-xs text-gray-500 mb-1">Assigned By</p>
                 <div className="flex -space-x-2">
-                  {card.recruiters.map((recruiter, recruiterIndex) => (
+                  {card.assigned_by.map((recruiter, recruiterIndex) => (
                     <div
                       key={recruiterIndex}
                       className="relative group"
@@ -794,11 +419,11 @@ const JobCardSection = ({ data, setIsOpen, setIsDeleteOpen }) => {
                       <img
                         className="w-8 h-8 rounded-full border-2 border-white"
                         src={recruiter}
-                        alt={`Recruiter ${recruiterIndex + 1}`}
+                        alt={`Manager ${recruiterIndex + 1}`}
                       />
                       {isHovered && (
                         <div className="absolute bottom-0 left-0 w-full bg-black text-white text-xs py-1 px-2 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                          Recruiter {recruiterIndex + 1}
+                          Manager {recruiterIndex + 1}
                         </div>
                       )}
                     </div>
@@ -809,7 +434,7 @@ const JobCardSection = ({ data, setIsOpen, setIsDeleteOpen }) => {
               {/* <div
                 className={`${
                   card.status === "OPEN"
-                    ? "bg-indigo-100 text-indigo-700"
+                    ? "bg-green-100 text-green-700"
                     : "bg-red-100 text-red-700"
                 } text-[11px] font-semibold px-2 py-1 rounded-xl`}
               >
@@ -853,4 +478,4 @@ const PaginationSection = () => (
   </Pagination>
 );
 
-export default JobPosting;
+export default AssignedPositions;
