@@ -7,6 +7,7 @@ import Dashboard from "./pages/Dashboard";
 import Users from "./pages/Users";
 import JobTitle from "./pages/JobTitle";
 import ForgetPassword from "./pages/ForgetPassword";
+import ResetPassword from "./pages/ResetPassword";
 import Client from "./pages/Client";
 import JobPosting from "./pages/JobPosting";
 import ClosedPositions from "./pages/ClosedPositions";
@@ -21,8 +22,8 @@ const App = () => {
         {Cookie.get("user") ? (
           <>
             {/* Routes for authenticated users */}
-            <Route path="/" element={<Layout content={Dashboard} />} />
-            <Route path="/dashboard" element={<Layout content={Dashboard} />} />
+            <Route path="/" element={<Layout content={Dashboard} isRaw={true} />} />
+            <Route path="/dashboard" element={<Layout content={Dashboard} isRaw={true} />} />
             <Route path="/users" element={<Layout content={Users} />} />
             <Route path="/job-title" element={<Layout content={JobTitle} />} />
             <Route path="/client" element={<Layout content={Client} />} />
@@ -44,6 +45,7 @@ const App = () => {
           <>
             <Route path="/" element={<Login />} />
             <Route path="/forget-password" element={<ForgetPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
           </>
         )}
 

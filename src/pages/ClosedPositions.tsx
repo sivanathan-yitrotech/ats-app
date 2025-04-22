@@ -126,14 +126,19 @@ const TableSection = ({ data }: { data: Array<any> }) => (
             <TableCell className={cellClass}>
               {client.commissionValue}
             </TableCell>
-            <TableCell className={cellClass}>{client.status}</TableCell>
             <TableCell className={cellClass}>
-              <div className="flex items-center space-x-3 text-gray-600">
-                <Receipt
-                  className="h-5 w-5 cursor-pointer hover:text-violet-400 transition-colors"
-                  aria-label="Generate Invoice"
-                />
-              </div>
+              <Badge
+                className={
+                  client.status == "Paid" ? "bg-green-500" : "bg-red-500"
+                }
+              >
+                {client.status}
+              </Badge>
+            </TableCell>
+            <TableCell className={cellClass}>
+              <Badge className="bg-violet-500 cursor-pointer hover:bg-violet-600">
+                Generate Invoice
+              </Badge>
             </TableCell>
           </TableRow>
         ))}

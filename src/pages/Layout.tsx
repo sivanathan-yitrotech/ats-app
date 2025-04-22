@@ -46,11 +46,6 @@ const SidebarItem = ({ url, icon: Icon, text, onClick }) => {
 // Sidebar Component
 const Sidebar = ({ role, sidebarOpen, onLinkClick }) => {
   const menus = {
-    admin: [
-      { icon: LayoutDashboard, text: "Dashboard", url: "/dashboard" },
-      { icon: Users, text: "User Management", url: "/users" },
-      { icon: BriefcaseBusiness, text: "Job Title", url: "/job-title" },
-    ],
     manager: [
       { icon: LayoutDashboard, text: "Dashboard", url: "/dashboard" },
       { icon: Users, text: "Client Management", url: "/client" },
@@ -58,6 +53,8 @@ const Sidebar = ({ role, sidebarOpen, onLinkClick }) => {
       { icon: FileUser, text: "Candidates Status", url: "/candidates-status" },
       { icon: ListChecks, text: "Closed Positions", url: "/closed-postitions" },
       { icon: Receipt, text: "Invoices", url: "/invoices" },
+      { icon: Users, text: "Candidates", url: "/candidates" },
+      { icon: CalendarCheck, text: "Interviews", url: "/interviews" },
     ],
     recruiter: [
       { icon: LayoutDashboard, text: "Dashboard", url: "/dashboard" },
@@ -118,7 +115,7 @@ const Layout = ({ content, isRaw }) => {
   }, [role, navigate]);
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex bg-gray-50">
       {/* Sidebar */}
       <Sidebar
         role={role}
@@ -127,8 +124,8 @@ const Layout = ({ content, isRaw }) => {
       />
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto">
-        <div className="flex justify-between items-center gap-1 bg-white shadow-sm p-4">
+      <main className="flex-1">
+        <div className="flex justify-between items-center gap-1 bg-white shadow-sm p-4 ">
           {/* Sidebar Toggle (Hamburger menu for mobile) */}
           <button
             className="md:hidden p-2 rounded-lg"
@@ -139,23 +136,27 @@ const Layout = ({ content, isRaw }) => {
           <div className="flex-grow" />
           <div className="flex items-center gap-4 md:gap-6">
             {/* Search Input */}
-            <div className="relative w-full md:w-70">
+            {/* <div className="relative w-full md:w-70">
               <input
                 type="text"
                 placeholder="Search"
                 className="pl-10 pr-4 py-2 rounded-full bg-[#fbf9fa] text-[#0044A3] font-medium placeholder:text-[#0044A3] text-sm w-full focus:outline-none"
               />
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-[#0044A3]" />
-            </div>
+            </div> */}
 
             {/* Settings and Notifications */}
             <div className="hidden md:flex items-center gap-6">
-              <div className="bg-[#fbf9fa] p-3 cursor-pointer rounded-full">
-                <Settings className="w-5 h-5 text-[#0044A3]" />
-              </div>
-              <div className="bg-[#fbf9fa] p-3 cursor-pointer rounded-full">
+              {role === "manager" && (
+                <div className="bg-[#fbf9fa] p-3 cursor-pointer rounded-full">
+                  <Link to="/users">
+                    <Settings className="w-5 h-5 text-[#0044A3]" />
+                  </Link>
+                </div>
+              )}
+              {/* <div className="bg-[#fbf9fa] p-3 cursor-pointer rounded-full">
                 <BellDot className="w-5 h-5 text-[#0044A3]" />
-              </div>
+              </div> */}
             </div>
 
             {/* Profile Picture */}

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Pencil, Trash2, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -38,12 +38,12 @@ const jobPostings = Array(10)
   .fill(null)
   .map((_, i) => ({
     clientName: `Client ${i + 1}`,
+    candidateName: `Client ${i + 1}`,
     jobTitle: `Job Title ${i + 1}`,
-    positions: `${Math.ceil(Math.random() * 50)}`,
-    experience: `${Math.ceil(Math.random() * 10)}`,
-    jobType: `${jobTypes[Math.floor(Math.random() * jobTypes.length)]}`,
-    location: `Location ${i + 1}`,
-    status: "Active",
+    invoiceAmount: `$${(Math.random() * 10000).toFixed(2)}`,
+    recruiter: `Recruiter ${i + 1}`,
+    dateIssued: `2023-09-${i + 1}`,
+    status: i % 2 === 0 ? "Paid" : "Pending",
   }));
 
 const Invoices = () => {
@@ -68,10 +68,6 @@ const HeaderSection = ({
       <FilterSelect />
       <SearchBar />
     </div>
-    <Button onClick={() => setIsOpen(true)} className={buttonClass}>
-      <Plus className="h-5 w-5" />
-      <span className="text-md font-semibold">Add Job Title</span>
-    </Button>
   </div>
 );
 
@@ -109,12 +105,12 @@ const TableSection = ({ data }: { data: Array<any> }) => (
       <TableHeader>
         <TableRow className="border-t-1 border-gray-200">
           <TableHead className={tableHeaderClass}>Client Name</TableHead>
+          <TableHead className={tableHeaderClass}>Candidate Name</TableHead>
           <TableHead className={tableHeaderClass}>Job Title</TableHead>
-          <TableHead className={tableHeaderClass}>Positions</TableHead>
-          <TableHead className={tableHeaderClass}>Experience</TableHead>
-          <TableHead className={tableHeaderClass}>Job Type</TableHead>
-          <TableHead className={tableHeaderClass}>Location</TableHead>
+          <TableHead className={tableHeaderClass}>Invoice Amount</TableHead>
+          <TableHead className={tableHeaderClass}>Recruiter</TableHead>
           <TableHead className={tableHeaderClass}>Status</TableHead>
+          <TableHead className={tableHeaderClass}>Date Issued</TableHead>
           <TableHead className={tableHeaderClass}>Action</TableHead>
         </TableRow>
       </TableHeader>
@@ -122,23 +118,30 @@ const TableSection = ({ data }: { data: Array<any> }) => (
         {data.map((client, i) => (
           <TableRow key={i} className="border-t-1 border-gray-200">
             <TableCell className={cellClass}>{client.clientName}</TableCell>
+            <TableCell className={cellClass}>{client.candidateName}</TableCell>
             <TableCell className={cellClass}>{client.jobTitle}</TableCell>
-            <TableCell className={cellClass}>{client.positions}</TableCell>
-            <TableCell className={cellClass}>{client.experience}</TableCell>
-            <TableCell className={cellClass}>{client.jobType}</TableCell>
-            <TableCell className={cellClass}>{client.location}</TableCell>
+            <TableCell className={cellClass}>{client.invoiceAmount}</TableCell>
+            <TableCell className={cellClass}>{client.recruiter}</TableCell>
             <TableCell className={cellClass}>
-              <Badge className="bg-green-500">{client.status}</Badge>
+              <Badge
+                className={
+                  client.status == "Paid" ? "bg-green-500" : "bg-red-500"
+                }
+              >
+                {client.status}
+              </Badge>
             </TableCell>
+            <TableCell className={cellClass}>{client.dateIssued}</TableCell>
+
             <TableCell className={cellClass}>
               <div className="flex items-center space-x-3 text-gray-600">
                 <Pencil
                   className="h-5 w-5 cursor-pointer hover:text-blue-500 transition-colors"
-                  aria-label="Edit Job Posting"
+                  aria-label="Edit Payment Status"
                 />
-                <Trash2
+                <Download
                   className="h-5 w-5 cursor-pointer hover:text-red-500 transition-colors"
-                  aria-label="Delete Job Posting"
+                  aria-label="Download Invoice"
                 />
               </div>
             </TableCell>

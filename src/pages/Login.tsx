@@ -1,3 +1,5 @@
+import { GalleryVerticalEnd } from "lucide-react";
+import LoginImage from "@/assets/login.svg";
 import React, { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -7,7 +9,7 @@ import axios from "axios";
 import Config from "@/config.json";
 import { useNavigate } from "react-router-dom";
 
-const Login = () => {
+export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -76,82 +78,83 @@ const Login = () => {
     window.location.href = "/";
   };
 
-  const handleReset = () => {
-    setEmail("");
-    setPassword("");
-    setError(""); // clear error message
-  };
-
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="w-full max-w-md p-8">
-        <div className="flex flex-col items-center gap-5 mb-8">
-          <h1 className="text-[#0044A3] text-lg font-bold">
-            Application Tracking System
-          </h1>
-          <h2 className="text-[#0044A3] text-lg font-bold">
-            Login to Your Account
-          </h2>
-        </div>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div className="flex flex-col sm:flex-row justify-between gap-2">
-            <Label className="text-[#0044A3] sm:w-[30%]">Email Address</Label>
-            <Input
-              name="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              maxLength={250}
-              placeholder="Enter your email address"
-              className="sm:w-[70%] placeholder:text-[12px] px-4 py-2 border rounded-md"
-            />
-          </div>
+    <div className="grid min-h-svh lg:grid-cols-2">
+      <div className="relative hidden bg-muted lg:block">
+        <img
+          src={LoginImage}
+          alt="Image"
+          className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
+        />
+      </div>
+      <div className="flex flex-col gap-4 p-6 md:p-10">
+        <div className="flex flex-1 items-center justify-center">
+          <div className="w-full">
+            <div className="w-full max-w-md p-8">
+              <div className="flex flex-col items-center gap-5 mb-8">
+                <h1 className="text-[#0044A3] text-lg font-bold">
+                  Application Tracking System
+                </h1>
+                <h2 className="text-[#0044A3] text-lg font-bold">
+                  Login to Your Account
+                </h2>
+              </div>
+              <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                <div className="flex flex-col sm:flex-row justify-between gap-2">
+                  <Label className="text-[#0044A3] sm:w-[30%]">
+                    Email Address
+                  </Label>
+                  <Input
+                    name="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    maxLength={250}
+                    placeholder="Enter your email address"
+                    className="sm:w-[70%] placeholder:text-[12px] px-4 py-2 border rounded-md"
+                  />
+                </div>
 
-          <div className="flex flex-col sm:flex-row justify-between gap-2">
-            <Label className="text-[#0044A3] sm:w-[30%]">Password</Label>
-            <Input
-              name="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              maxLength={250}
-              placeholder="Enter your password"
-              className="sm:w-[70%] placeholder:text-[12px] px-4 py-2 border rounded-md"
-            />
+                <div className="flex flex-col sm:flex-row justify-between gap-2">
+                  <Label className="text-[#0044A3] sm:w-[30%]">Password</Label>
+                  <Input
+                    name="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    maxLength={250}
+                    placeholder="Enter your password"
+                    className="sm:w-[70%] placeholder:text-[12px] px-4 py-2 border rounded-md"
+                  />
+                </div>
+                <div className="flex flex-col sm:flex-row justify-between gap-2">
+                  <Label className="text-[#0044A3] sm:w-[30%]"></Label>
+                  <a
+                    onClick={() => navigate("/forget-password")}
+                    className="text-[12px] text-[#0044A3] cursor-pointer underline"
+                  >
+                    Forget Password?
+                  </a>
+                </div>
+
+                <div className="flex flex-row gap-6 justify-center mb-1">
+                  <Button
+                    type="submit"
+                    className="bg-[#0044A3] rounded-[3px] cursor-pointer hover:bg-blue-950 text-white"
+                  >
+                    Log In
+                  </Button>
+                </div>
+                <div className="text-center text-[#0044A3] mt-1">
+                  {error && (
+                    <div className="text-red-500 text-[12px] mb-1">{error}</div>
+                  )}
+                </div>
+              </form>
+            </div>
           </div>
-          <div className="flex flex-col sm:flex-row justify-between gap-2">
-            <Label className="text-[#0044A3] sm:w-[30%]"></Label>
-            <a
-              onClick={() => navigate("/forget-password")}
-              className="text-[12px] text-[#0044A3] cursor-pointer underline"
-            >
-              Forget Password?
-            </a>
-          </div>
-          <div className="text-center text-[#0044A3] mt-2">
-            {error && (
-              <div className="text-red-500 text-[12px] mb-2">{error}</div>
-            )}
-          </div>
-          <div className="flex flex-row gap-6 justify-center mb-4">
-            <Button
-              type="button"
-              className="bg-white rounded-[3px] cursor-pointer hover:bg-neutral-300 border-1 border-[#64748B] text-[#64748B]"
-              onClick={handleReset} // used handleReset function here
-            >
-              Reset
-            </Button>
-            <Button
-              type="submit"
-              className="bg-[#0044A3] rounded-[3px] cursor-pointer hover:bg-blue-950 text-white"
-            >
-              Log In
-            </Button>
-          </div>
-        </form>
+        </div>
       </div>
     </div>
   );
-};
-
-export default Login;
+}
