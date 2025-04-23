@@ -467,6 +467,7 @@ const AddJobPostingDialog = ({
               <Label className="text-[#1E293B] w-[30%]">
                 Prefered Experience
               </Label>
+              <div className="w-[70%] flex justify-between items-center gap-2">
               <Slider
                 className="w-[70%]"
                 defaultValue={[3, 6]} // Default range values
@@ -475,6 +476,12 @@ const AddJobPostingDialog = ({
                 value={range} // Set the current range
                 onValueChange={handleSliderChange} // Update the range when changed
               />
+              <p className="w-[30%] text-sm ">
+                <Badge className="bg-blue-400 rounded-full px-2 py-1 text-white font-bold">
+                  {range[0]} - {range[1]} Years
+                </Badge>
+              </p>
+              </div>
             </div>
 
             <div className="flex items-center gap-4">
@@ -491,11 +498,24 @@ const AddJobPostingDialog = ({
               </Select>
             </div>
 
-            <InputField
-              label="CTC(per year)"
-              name="ctc"
-              placeholder="Enter the CTC"
-            />
+            <div className="flex items-center gap-4">
+              <Label className="text-[#1E293B] w-[30%]">CTC/Year</Label>
+              <Select name="Country" defaultValue="1">
+                <SelectTrigger className="w-[15%] placeholder:text-[13px] px-4 py-5">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">$</SelectItem>
+                  <SelectItem value="2">₹</SelectItem>
+                </SelectContent>
+              </Select>
+              <Input
+                name="ctc"
+                type="number"
+                placeholder="Enter the Expected CTC"
+                className="w-[55%] placeholder:text-[12px] px-4 py-5"
+              />
+            </div>
 
             <div className="flex items-center gap-4">
               <Label className="text-[#1E293B] w-[30%]">Location</Label>

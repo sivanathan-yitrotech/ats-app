@@ -473,7 +473,7 @@ const AssignDialog = ({
           {/* Email/Mobile */}
           <div className="flex items-center gap-4">
             <Label className="w-[30%] text-[#1E293B] font-medium">
-              Email/Mobile
+              Email / Mobile
             </Label>
             <span className="w-[70%] text-[#4B5563] text-sm">
               albort.brade@gmail.com / 878687885
