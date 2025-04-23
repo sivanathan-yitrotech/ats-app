@@ -13,6 +13,7 @@ import {
   EllipsisVertical,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -438,209 +439,222 @@ const AddJobPostingDialog = ({
 }: {
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
-}) => (
-  <Dialog open={isOpen} onOpenChange={(open) => setIsOpen(open)}>
-    <DialogContent
-      style={{ maxWidth: "80%", maxHeight: "90vh", overflowY: "auto" }}
-    >
-      <DialogHeader>
-        <DialogTitle className="my-4 text-xl text-[#0044A3] font-bold text-center">
-          Add Job Posting
-        </DialogTitle>
-        <div className="mt-4 grid grid-cols-2 gap-x-8 gap-y-5">
-          {/* Row 1 */}
-          <InputField
-            label="Job Title"
-            name="jobTitle"
-            placeholder="Enter the Job Title"
-          />
+}) => {
+  const [range, setRange] = useState<[number, number]>([0, 5]); // The initial "from" and "to" values
 
-          <div className="flex items-center gap-4">
-            <Label className="text-[#1E293B] w-[30%]">
-              Prefered Experience
-            </Label>
-            <Input
-              name="experience"
-              placeholder="Enter the Experience"
-              className="w-[70%] placeholder:text-[13px] px-4 py-5"
+  const handleSliderChange = (newRange: [number, number]) => {
+    setRange(newRange); // Update the range when the slider changes
+    console.log("Slider range:", newRange); // Log the new range values
+  };
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => setIsOpen(open)}>
+      <DialogContent
+        style={{ maxWidth: "80%", maxHeight: "90vh", overflowY: "auto" }}
+      >
+        <DialogHeader>
+          <DialogTitle className="my-4 text-xl text-[#0044A3] font-bold text-center">
+            Add Job Posting
+          </DialogTitle>
+          <div className="mt-4 grid grid-cols-2 gap-x-8 gap-y-5">
+            {/* Row 1 */}
+            <InputField
+              label="Job Title"
+              name="jobTitle"
+              placeholder="Enter the Job Title"
             />
-          </div>
 
-          <div className="flex items-center gap-4">
-            <Label className="text-[#1E293B] w-[30%]">Client Name</Label>
-            <Select name="clientName">
-              <SelectTrigger className="w-[70%] placeholder:text-[13px] px-4 py-5">
-                <SelectValue placeholder="Select Client" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">Client - 1</SelectItem>
-                <SelectItem value="2">Client - 2</SelectItem>
-                <SelectItem value="3">Client - 3</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+            <div className="flex items-center gap-4">
+              <Label className="text-[#1E293B] w-[30%]">
+                Prefered Experience
+              </Label>
+              <Slider
+                className="w-[70%]"
+                defaultValue={[3, 6]} // Default range values
+                min={0} // Minimum value of the slider
+                max={30} // Maximum value of the slider
+                value={range} // Set the current range
+                onValueChange={handleSliderChange} // Update the range when changed
+              />
+            </div>
 
-          <InputField
-            label="CTC(per year)"
-            name="ctc"
-            placeholder="Enter the CTC"
-          />
+            <div className="flex items-center gap-4">
+              <Label className="text-[#1E293B] w-[30%]">Client Name</Label>
+              <Select name="clientName">
+                <SelectTrigger className="w-[70%] placeholder:text-[13px] px-4 py-5">
+                  <SelectValue placeholder="Select Client" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">Client - 1</SelectItem>
+                  <SelectItem value="2">Client - 2</SelectItem>
+                  <SelectItem value="3">Client - 3</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="flex items-center gap-4">
-            <Label className="text-[#1E293B] w-[30%]">Country</Label>
-            <Select name="country">
-              <SelectTrigger className="w-[70%] placeholder:text-[13px] px-4 py-5">
-                <SelectValue placeholder="Select Country" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">India</SelectItem>
-                <SelectItem value="2">America</SelectItem>
-                <SelectItem value="3">Canada</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-center gap-4">
-            <Label className="text-[#1E293B] w-[30%]">City</Label>
-            <Select name="city">
-              <SelectTrigger className="w-[70%] placeholder:text-[13px] px-4 py-5">
-                <SelectValue placeholder="Select City" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">City - 1</SelectItem>
-                <SelectItem value="2">City - 2</SelectItem>
-                <SelectItem value="3">City - 3</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <Label className="text-[#1E293B] w-[30%]">Commission Type</Label>
-            <Select name="commissionType">
-              <SelectTrigger className="w-[70%] placeholder:text-[13px] px-4 py-5">
-                <SelectValue placeholder="Select Commission Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="fixed">Fixed</SelectItem>
-                <SelectItem value="percentage">Percentage</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <Label className="text-[#1E293B] w-[30%]">Commission Value</Label>
-            <Input
-              name="commissionValue"
-              placeholder="Enter Commission Value"
-              className="w-[70%] placeholder:text-[13px] px-4 py-5"
+            <InputField
+              label="CTC(per year)"
+              name="ctc"
+              placeholder="Enter the CTC"
             />
-          </div>
 
-          <div className="flex items-center gap-4">
-            <Label className="text-[#1E293B] w-[30%]">Status</Label>
-            <Select name="status">
-              <SelectTrigger className="w-[70%] placeholder:text-[13px] px-4 py-5">
-                <SelectValue placeholder="Select Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="Open">Open</SelectItem>
-                <SelectItem value="Closed">Closed</SelectItem>
-                <SelectItem value="On-Hold">On-Hold</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+            <div className="flex items-center gap-4">
+              <Label className="text-[#1E293B] w-[30%]">Location</Label>
+              <Select name="Country">
+                <SelectTrigger className="w-[34%] placeholder:text-[13px] px-4 py-5">
+                  <SelectValue placeholder="Select Country" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">India</SelectItem>
+                  <SelectItem value="2">America</SelectItem>
+                  <SelectItem value="3">Canada</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select name="months">
+                <SelectTrigger className="w-[34%] placeholder:text-[13px] px-4 py-5">
+                  <SelectValue placeholder="Select City" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">New Delhi</SelectItem>
+                  <SelectItem value="2">Mumbai</SelectItem>
+                  <SelectItem value="3">New York City</SelectItem>
+                  <SelectItem value="4">Los Angeles</SelectItem>
+                  <SelectItem value="5">Toronto</SelectItem>
+                  <SelectItem value="6">Vancouver</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="flex items-center gap-4">
-            <Label className="text-[#1E293B] w-[30%]">Work Mode</Label>
-            <Select name="workMode">
-              <SelectTrigger className="w-[70%] placeholder:text-[13px] px-4 py-5">
-                <SelectValue placeholder="Select Work Mode" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="On-Site">On-Site</SelectItem>
-                <SelectItem value="Hybrid">Hybrid</SelectItem>
-                <SelectItem value="Remote">Remote</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+            <div className="flex items-center gap-4">
+              <Label className="text-[#1E293B] w-[30%]">Commission Type</Label>
+              <Select name="commissionType">
+                <SelectTrigger className="w-[70%] placeholder:text-[13px] px-4 py-5">
+                  <SelectValue placeholder="Select Commission Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="fixed">Fixed</SelectItem>
+                  <SelectItem value="percentage">Percentage</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="flex items-center gap-4">
-            <Label className="text-[#1E293B] w-[30%]">Assign Recruiter</Label>
-            <Select name="assignRecruiter">
-              <SelectTrigger className="w-[70%] placeholder:text-[13px] px-4 py-5">
-                <SelectValue placeholder="Select Recruiter" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="recruiter-1">Recruiter 1</SelectItem>
-                <SelectItem value="recruiter-2">Recruiter 2</SelectItem>
-                <SelectItem value="recruiter-3">Recruiter 3</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+            <div className="flex items-center gap-4">
+              <Label className="text-[#1E293B] w-[30%]">Commission Value</Label>
+              <Input
+                name="commissionValue"
+                placeholder="Enter Commission Value"
+                className="w-[70%] placeholder:text-[13px] px-4 py-5"
+              />
+            </div>
 
-          <div className="flex items-center gap-4">
-            <Label className="text-[#1E293B] w-[30%]">Position Count</Label>
-            <Input
-              type="number"
-              name="positionCount"
-              placeholder="Enter the Position Count"
-              className="w-[70%] placeholder:text-[13px] px-4 py-5"
-            />
-          </div>
+            <div className="flex items-center gap-4">
+              <Label className="text-[#1E293B] w-[30%]">Status</Label>
+              <Select name="status">
+                <SelectTrigger className="w-[70%] placeholder:text-[13px] px-4 py-5">
+                  <SelectValue placeholder="Select Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Open">Open</SelectItem>
+                  <SelectItem value="Closed">Closed</SelectItem>
+                  <SelectItem value="On-Hold">On-Hold</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="flex items-center gap-4">
-            <Label className="text-[#1E293B] w-[30%]">Open Date</Label>
-            <Input
-              name="openDate"
-              type="date"
-              className="w-[70%] placeholder:text-[13px] px-4 py-5"
-            />
-          </div>
+            <div className="flex items-center gap-4">
+              <Label className="text-[#1E293B] w-[30%]">Work Mode</Label>
+              <Select name="workMode">
+                <SelectTrigger className="w-[70%] placeholder:text-[13px] px-4 py-5">
+                  <SelectValue placeholder="Select Work Mode" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="On-Site">On-Site</SelectItem>
+                  <SelectItem value="Hybrid">Hybrid</SelectItem>
+                  <SelectItem value="Remote">Remote</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="flex items-center gap-4">
-            <Label className="text-[#1E293B] w-[30%]">Closing Date</Label>
-            <Input
-              name="closingDate"
-              type="date"
-              className="w-[70%] placeholder:text-[13px] px-4 py-5"
-            />
-          </div>
+            <div className="flex items-center gap-4">
+              <Label className="text-[#1E293B] w-[30%]">Assign Recruiter</Label>
+              <Select name="assignRecruiter">
+                <SelectTrigger className="w-[70%] placeholder:text-[13px] px-4 py-5">
+                  <SelectValue placeholder="Select Recruiter" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="recruiter-1">Recruiter 1</SelectItem>
+                  <SelectItem value="recruiter-2">Recruiter 2</SelectItem>
+                  <SelectItem value="recruiter-3">Recruiter 3</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          {/* Row 2 */}
-          <div className="flex items-center gap-4 col-span-2">
-            <Label className="text-[#1E293B] w-[16.5%]">Description</Label>
-            <Input
-              name="description"
-              placeholder="Enter the Description"
-              className="w-full placeholder:text-[13px] px-4 py-5"
-            />
-          </div>
+            <div className="flex items-center gap-4">
+              <Label className="text-[#1E293B] w-[30%]">Position Count</Label>
+              <Input
+                type="number"
+                name="positionCount"
+                placeholder="Enter the Position Count"
+                className="w-[70%] placeholder:text-[13px] px-4 py-5"
+              />
+            </div>
 
-          {/* Row 3 */}
-          <div className="flex items-center gap-4 col-span-2">
-            <Label className="text-[#1E293B] w-[16.5%]">Job Description</Label>
-            <Input
-              type="file"
-              name="descriptionFile"
-              placeholder="Upload the Job Description"
-              className="w-full placeholder:text-[13px]"
-            />
-          </div>
+            <div className="flex items-center gap-4">
+              <Label className="text-[#1E293B] w-[30%]">Open Date</Label>
+              <Input
+                name="openDate"
+                type="date"
+                className="w-[70%] placeholder:text-[13px] px-4 py-5"
+              />
+            </div>
 
-          {/* Buttons */}
-          <div className="col-span-2 flex justify-center gap-6 my-7">
-            <Button className={buttonClass}>Save</Button>
-            <Button
-              onClick={() => setIsOpen(false)}
-              className="bg-white rounded-[3px] cursor-pointer hover:bg-neutral-300 border border-[#64748B] text-[#64748B]"
-            >
-              Cancel
-            </Button>
+            <div className="flex items-center gap-4">
+              <Label className="text-[#1E293B] w-[30%]">Closing Date</Label>
+              <Input
+                name="closingDate"
+                type="date"
+                className="w-[70%] placeholder:text-[13px] px-4 py-5"
+              />
+            </div>
+
+            {/* Row 2 */}
+            <div className="flex items-center gap-4 col-span-2">
+              <Label className="text-[#1E293B] w-[16.5%]">Description</Label>
+              <Input
+                name="description"
+                placeholder="Enter the Description"
+                className="w-full placeholder:text-[13px] px-4 py-5"
+              />
+            </div>
+
+            {/* Row 3 */}
+            <div className="flex items-center gap-4 col-span-2">
+              <Label className="text-[#1E293B] w-[16.5%]">
+                Job Description
+              </Label>
+              <Input
+                type="file"
+                name="descriptionFile"
+                placeholder="Upload the Job Description"
+                className="w-full placeholder:text-[13px]"
+              />
+            </div>
+
+            {/* Buttons */}
+            <div className="col-span-2 flex justify-center gap-6 my-7">
+              <Button className={buttonClass}>Save</Button>
+              <Button
+                onClick={() => setIsOpen(false)}
+                className="bg-white rounded-[3px] cursor-pointer hover:bg-neutral-300 border border-[#64748B] text-[#64748B]"
+              >
+                Cancel
+              </Button>
+            </div>
           </div>
-        </div>
-      </DialogHeader>
-    </DialogContent>
-  </Dialog>
-);
+        </DialogHeader>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 const DeleteDialog = ({
   isDeleteOpen,

@@ -50,6 +50,8 @@ const Sidebar = ({ role, sidebarOpen, onLinkClick }) => {
       { icon: LayoutDashboard, text: "Dashboard", url: "/dashboard" },
       { icon: Users, text: "Client Management", url: "/client" },
       { icon: BriefcaseBusiness, text: "Job Postings", url: "/job-posting" },
+      { icon: FileUser, text: "Manage Candidates", url: "/candidates" },
+      { icon: CalendarCheck, text: "Manage Interviews", url: "/interviews" },
       { icon: FileUser, text: "Candidates Status", url: "/candidates-status" },
       // { icon: ListChecks, text: "Closed Positions", url: "/closed-postitions" },
       { icon: Receipt, text: "Invoices", url: "/invoices" },
@@ -59,8 +61,9 @@ const Sidebar = ({ role, sidebarOpen, onLinkClick }) => {
     recruiter: [
       { icon: LayoutDashboard, text: "Dashboard", url: "/dashboard" },
       { icon: CalendarCheck, text: "Assigned Positions", url: "/assigned-positions" },
+      { icon: FileUser, text: "Manage Candidates", url: "/candidates" },
+      { icon: CalendarCheck, text: "Manage Interviews", url: "/interviews" },
       { icon: FileUser, text: "Candidates Status", url: "/candidates-status" },
-      { icon: CalendarCheck, text: "Interviews", url: "/interviews" },
     ],
   };
 

@@ -291,7 +291,7 @@ const UpdateStatusDialog = ({
           Update Invoice
         </DialogTitle>
         
-        <div className="mt-4 space-y-4">
+        <div className="mt-4 space-y-6">
           {[
             { label: "Client Name", value: "YITRO Global" },
             { label: "Job Posting", value: "UI/UX Designer" },

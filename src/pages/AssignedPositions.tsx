@@ -351,7 +351,12 @@ const JobCardSection = ({ data }) => {
   const [clickedIndex, setClickedIndex] = useState(null);
 
   const handleHover = (index) => setHoveredIndex(index);
-  const handleClick = (index) => setClickedIndex(index);
+  const handleClick = (index) => {
+    // Toggle clicked state
+    setClickedIndex((prevClickedIndex) =>
+      prevClickedIndex === index ? null : index
+    );
+  };
 
   return (
     <>
@@ -430,16 +435,6 @@ const JobCardSection = ({ data }) => {
                   ))}
                 </div>
               </div>
-
-              {/* <div
-                className={`${
-                  card.status === "OPEN"
-                    ? "bg-green-100 text-green-700"
-                    : "bg-red-100 text-red-700"
-                } text-[11px] font-semibold px-2 py-1 rounded-xl`}
-              >
-                CTC : {card.ctc}
-              </div> */}
             </div>
 
             {isClicked && (
