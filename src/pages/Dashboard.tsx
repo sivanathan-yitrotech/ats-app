@@ -2,7 +2,6 @@ import { Bar, BarChart, CartesianGrid, XAxis, Rectangle } from "recharts";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
@@ -146,7 +145,7 @@ const Dashboard = () => {
                     radius={8}
                     barSize={30}
                     activeIndex={2}
-                    activeBar={(props) => (
+                    shape={(props: any) => (
                       <Rectangle
                         {...props}
                         fillOpacity={0.8}

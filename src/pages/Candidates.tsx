@@ -4,7 +4,6 @@ import {
   Plus,
   ChevronsUpDown,
   FilePlus,
-  FileMinus,
   Check,
   Pencil,
   Trash2,
@@ -51,11 +50,9 @@ import {
   PaginationPrevious,
   PaginationNext,
 } from "@/components/ui/pagination";
-import { Badge } from "@/components/ui/badge";
 
 const tableHeaderClass = "text-[#0044A3] font-semibold text-sm py-3 px-6";
 const cellClass = "text-sm font-medium text-gray-700 py-3 px-6";
-import { TagsInput } from "react-tag-input-component";
 
 // Sample clients data
 const jobRoles = [
@@ -91,13 +88,13 @@ const Candidates = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [assignOpen, setAssignOpen] = useState(false);
-  const [skills, setSkills] = useState([]);
+  const [skills, setSkills] = useState<string[]>([]);
 
   return (
     <div className="p-4">
       <div className="flex flex-col items-center mb-6">
         <h1 className="text-lg font-bold text-[#475569]">
-          Candidate Management
+          Candidate Management {skills.length > 0 && `(${skills.join(", ")})`}
         </h1>
         <p className="text-sm text-[#475569] mt-2 text-center">
           Easily track, organize, and collaborate with candidates throughout the
@@ -138,7 +135,6 @@ const CardSection = ({
 }) => {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState<string>("");
-  const [active, setActive] = useState("0");
 
   const sortBy = [
     { value: "a-z", label: "A-Z" },
@@ -485,7 +481,7 @@ const AssignDialog = ({
             <Label className="w-[40%] text-[#1E293B] font-medium">
               Job Postings
             </Label>
-            <Select name="months" className="w-[60%]">
+            <Select name="months" defaultValue="1">
               <SelectTrigger className="w-full px-4 py-2 rounded-md border border-[#CBD5E1] focus:ring-2 focus:ring-blue-500">
                 <SelectValue placeholder="Select Job Posting" />
               </SelectTrigger>
@@ -500,7 +496,10 @@ const AssignDialog = ({
         </div>
 
         <div className="flex justify-center gap-6 my-6">
-          <Button className="bg-[#0044A3] rounded-[3px] hover:bg-blue-950" onClick={() => setAssignOpen(false)}>
+          <Button
+            className="bg-[#0044A3] rounded-[3px] hover:bg-blue-950"
+            onClick={() => setAssignOpen(false)}
+          >
             Save
           </Button>
           <Button

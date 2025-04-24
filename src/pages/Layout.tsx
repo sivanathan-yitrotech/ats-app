@@ -1,25 +1,29 @@
 import React, { useState, useEffect } from "react";
 import {
   LayoutDashboard,
-  Search,
   Settings,
   Users,
   BriefcaseBusiness,
-  ListChecks,
   Receipt,
   CalendarCheck,
   FileUser,
-  BellDot,
   Menu,
   LogOut,
 } from "lucide-react";
 import Logo from "@/assets/logo.png";
-import { getUserData } from "../../utils/common.js";
+import { getUserData } from "../../utils/common";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 
 // SidebarItem Component
-const SidebarItem = ({ url, icon: Icon, text, onClick }) => {
+interface SidebarItemProps {
+  url: string;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  text: string;
+  onClick?: () => void;
+}
+
+const SidebarItem: React.FC<SidebarItemProps> = ({ url, icon: Icon, text, onClick }) => {
   const location = useLocation();
   const isActive = location.pathname === url;
 
@@ -44,7 +48,13 @@ const SidebarItem = ({ url, icon: Icon, text, onClick }) => {
 };
 
 // Sidebar Component
-const Sidebar = ({ role, sidebarOpen, onLinkClick }) => {
+interface SidebarProps {
+  role: "manager" | "recruiter";
+  sidebarOpen: boolean;
+  onLinkClick: () => void;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ role, sidebarOpen, onLinkClick }) => {
   const menus = {
     manager: [
       { icon: LayoutDashboard, text: "Dashboard", url: "/dashboard" },
@@ -90,7 +100,12 @@ const Sidebar = ({ role, sidebarOpen, onLinkClick }) => {
 };
 
 // Layout Component
-const Layout = ({ content, isRaw }) => {
+interface LayoutProps {
+  content: React.ElementType;
+  isRaw: boolean;
+}
+
+const Layout: React.FC<LayoutProps> = ({ content, isRaw }) => {
   const userData = getUserData();
   const role = userData?.role; // Ensure role is available
   const [sidebarOpen, setSidebarOpen] = useState(true);

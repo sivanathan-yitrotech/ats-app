@@ -3,14 +3,13 @@ import React, { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
 
 export default function ResetPassword() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setErrors] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     // Reset error messages on every submit attempt
@@ -44,7 +43,6 @@ export default function ResetPassword() {
     }
   };
 
-  const navigate = useNavigate();
 
   return (
     <div className="grid min-h-screen lg:grid-cols-2">

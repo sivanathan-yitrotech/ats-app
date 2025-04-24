@@ -1,5 +1,5 @@
 import LoginImage from "@/assets/login.svg";
-import React, { useState } from "react";
+import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ export default function ForgerPassword() {
   const [email, setEmail] = useState("");
   const [error, setErrors] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     // Reset error messages on every submit attempt

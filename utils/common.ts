@@ -1,6 +1,6 @@
 import Cookies from "js-cookie";
 
-export const getUserData = () => {
+export const getUserData = (): any | null => {
   try {
     const userData = Cookies.get("user");
     return userData ? JSON.parse(userData) : null;

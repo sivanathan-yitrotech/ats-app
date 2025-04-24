@@ -1,60 +1,36 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import PaginationSection from "@/components/ui/page";
+import NoData from "@/components/ui/nodata";
+import SortBy from "@/components/ui/sortby";
+import InputField from "@/components/ui/inputfield";
+import axios from "axios";
 import {
   Plus,
-  ChevronsUpDown,
-  Menu,
-  Check,
+  Menu as MenuIcon,
   EllipsisVertical,
   Pencil,
   Trash,
 } from "lucide-react";
+import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Toaster } from "@/components/ui/sonner";
+import { toast } from "sonner";
+import {
+  Menu,
+  MenuButton,
+  MenuItem,
+  MenuItems,
+  MenuSection,
+} from "@headlessui/react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Command,
-  CommandGroup,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
-
-const roles = ["manager", "recruiter"];
-const users = Array(12)
-  .fill(null)
-  .map((_, i) => ({
-    firstName: `User`,
-    lastName: `Name ${i + 1}`,
-    email: `user-${i + 1}@gmail.com`,
-    phoneNumber: `98978989${i + 1}`,
-    role: roles[Math.floor(Math.random() * roles.length)],
-  }));
 
 interface User {
   firstName: string;
@@ -65,8 +41,40 @@ interface User {
 }
 
 const Users = () => {
+  const [users, setUsers] = useState<User[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [filterBy, setFilterBy] = useState("0");
+  const [sortBy, setSortBy] = useState("");
+  const [search, setSearch] = useState("");
+  const limit = 20;
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+
+  const loadUsers = () => {
+    axios
+      .get(`http://127.0.0.1:8000/get-data`, {
+        params: {
+          type: "users-list",
+          page: "page",
+          limit: limit,
+          filterby: filterBy,
+          sortby: sortBy,
+          searchby: search,
+        },
+      })
+      .then((response) => {
+        setUsers(response.data.data);
+        setTotal(75);
+      })
+      .catch((error) => {
+        console.error("API Error:", error);
+      });
+  };
+
+  useEffect(() => {
+    loadUsers();
+  }, [filterBy, sortBy, search, page]);
 
   return (
     <div className="p-4">
@@ -74,13 +82,26 @@ const Users = () => {
         data={users}
         setIsOpen={setIsOpen}
         setIsDeleteOpen={setIsDeleteOpen}
+        setFilterBy={setFilterBy}
+        setSortBy={setSortBy}
+        setSearch={setSearch}
       />
-      <PaginationSection />
-      <AddUserDialog isOpen={isOpen} setIsOpen={setIsOpen} />
+      <PaginationSection
+        total={total}
+        limit={limit}
+        page={page}
+        setPage={setPage}
+      />
+      <AddUserDialog
+        isOpen={isOpen}
+        setIsOpen={setIsOpen}
+        loadUsers={loadUsers}
+      />
       <DeleteDialog
         isDeleteOpen={isDeleteOpen}
         setIsDeleteOpen={setIsDeleteOpen}
       />
+      <Toaster />
     </div>
   );
 };
@@ -89,16 +110,22 @@ const CardSection = ({
   data,
   setIsOpen,
   setIsDeleteOpen,
+  setFilterBy,
+  setSortBy,
+  setSearch,
 }: {
   data: User[];
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   setIsDeleteOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  setFilterBy: React.Dispatch<React.SetStateAction<string>>;
+  setSortBy: React.Dispatch<React.SetStateAction<string>>;
+  setSearch: React.Dispatch<React.SetStateAction<string>>;
 }) => {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState<string>("");
   const [active, setActive] = useState("0");
 
-  const sortBy = [
+  const sortOptions = [
     { value: "a-z", label: "A-Z" },
     { value: "z-a", label: "Z-A" },
     { value: "newest", label: "Newest First" },
@@ -106,12 +133,13 @@ const CardSection = ({
     { value: "last_updated", label: "Last Updated" },
   ];
 
-  const editData = () => {
-    setIsOpen(true);
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
   };
 
-  const deleteData = () => {
-    setIsDeleteOpen(true);
+  const handleSortChange = (val: string) => {
+    setValue(val);
+    setSortBy(val);
   };
 
   return (
@@ -124,9 +152,12 @@ const CardSection = ({
               className={`cursor-pointer flex items-center gap-2 ${
                 active === String(idx) ? "toggle-active" : ""
               }`}
-              onClick={() => setActive(String(idx))}
+              onClick={() => {
+                setActive(String(idx));
+                setFilterBy(String(idx));
+              }}
             >
-              {idx === 0 && <Menu className="h-4 w-4" />}
+              {idx === 0 && <MenuIcon className="h-4 w-4" />}
               <p className="text-[#475569] text-sm">{label}</p>
             </div>
           ))}
@@ -137,14 +168,14 @@ const CardSection = ({
             type="text"
             placeholder="Search"
             className="w-[200px] placeholder:text-[12px] px-4 py-5"
-            onChange={(e) => console.log(e.target.value)}
+            onChange={handleSearch}
           />
           <SortBy
             open={open}
             setOpen={setOpen}
             value={value}
-            setValue={setValue}
-            sortBy={sortBy}
+            setValue={handleSortChange}
+            sortBy={sortOptions}
           />
           <Button
             variant="secondary"
@@ -156,72 +187,23 @@ const CardSection = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4 my-7">
-        {data.map((user, index) => (
-          <UsersCard
-            key={index}
-            user={user}
-            editData={editData}
-            deleteData={deleteData}
-          />
-        ))}
-      </div>
+      {data.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4 my-7">
+          {data.map((user, index) => (
+            <UsersCard
+              key={index}
+              user={user}
+              editData={() => setIsOpen(true)}
+              deleteData={() => setIsDeleteOpen(true)}
+            />
+          ))}
+        </div>
+      ) : (
+        <NoData />
+      )}
     </>
   );
 };
-
-const SortBy = ({
-  open,
-  setOpen,
-  value,
-  setValue,
-  sortBy,
-}: {
-  open: boolean;
-  setOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  value: string;
-  setValue: React.Dispatch<React.SetStateAction<string>>;
-  sortBy: { value: string; label: string }[];
-}) => (
-  <Popover open={open} onOpenChange={setOpen}>
-    <PopoverTrigger asChild>
-      <Button
-        variant="outline"
-        role="combobox"
-        aria-expanded={open}
-        className="w-auto justify-between"
-      >
-        {value ? sortBy.find((item) => item.value === value)?.label : "Sort By"}
-        <ChevronsUpDown className="opacity-50" />
-      </Button>
-    </PopoverTrigger>
-    <PopoverContent className="w-auto p-0">
-      <Command>
-        <CommandList>
-          <CommandGroup>
-            {sortBy.map((item) => (
-              <CommandItem
-                key={item.value}
-                value={item.value}
-                onSelect={(currentValue) => {
-                  setValue(currentValue === value ? "" : currentValue);
-                  setOpen(false);
-                }}
-              >
-                {item.label}
-                <Check
-                  className={`ml-auto ${
-                    value === item.value ? "opacity-100" : "opacity-0"
-                  }`}
-                />
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        </CommandList>
-      </Command>
-    </PopoverContent>
-  </Popover>
-);
 
 const UsersCard = ({
   user,
@@ -239,29 +221,7 @@ const UsersCard = ({
           {user.firstName} {user.lastName}
         </p>
         <div className="flex flex-row-reverse items-center gap-2 text-[13px] text-gray-600">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <EllipsisVertical className="h-5 w-5 text-gray-700 cursor-pointer hover:text-gray-600" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-auto bg-white rounded-md shadow-lg p-2">
-              <DropdownMenuLabel>
-                <div className="flex flex-col gap-2">
-                  <div
-                    className="flex gap-2 cursor-pointer text-gray-700 hover:text-indigo-500 font-medium"
-                    onClick={editData}
-                  >
-                    <Pencil className="h-4 w-4" /> Edit
-                  </div>
-                  <div
-                    className="flex gap-2 cursor-pointer text-gray-700 hover:text-red-500 font-medium"
-                    onClick={deleteData}
-                  >
-                    <Trash className="h-4 w-4" /> Delete
-                  </div>
-                </div>
-              </DropdownMenuLabel>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <ActionSection id={"1"} editData={editData} deleteData={deleteData} />
           <Badge
             className={`text-[10px] text-black px-2 py-1 rounded-full ${
               user.role === "manager" ? "bg-lime-200" : "bg-teal-200"
@@ -292,118 +252,341 @@ const UsersCard = ({
   );
 };
 
+const ActionSection = ({
+  editData,
+  deleteData,
+}: {
+  editData: () => void;
+  deleteData: () => void;
+}) => {
+  return (
+    <Menu as="div" className="relative inline-block text-left">
+      <div>
+        <Menu.Button className="cursor-pointer inline-flex items-center justify-center rounded-md p-1 text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-1">
+          <EllipsisVertical className="h-4 w-4" />
+        </Menu.Button>
+      </div>
+
+      <Menu.Items className="absolute right-0 z-20 mt-1 w-32 origin-top-right rounded-md bg-white shadow-md ring-1 ring-black/10 focus:outline-none text-xs">
+        <div className="py-1">
+          <Menu.Item>
+            {({ active }) => (
+              <button
+                onClick={editData}
+                className={`flex items-center gap-1.5 w-full px-3 py-1.5 transition-colors rounded-sm ${
+                  active ? "bg-indigo-50 text-indigo-600" : "hover:bg-gray-50"
+                }`}
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                Edit
+              </button>
+            )}
+          </Menu.Item>
+          <Menu.Item>
+            {({ active }) => (
+              <button
+                onClick={deleteData}
+                className={`flex items-center gap-1.5 w-full px-3 py-1.5 transition-colors rounded-sm ${
+                  active ? "bg-red-50 text-red-600" : "hover:bg-gray-50"
+                }`}
+              >
+                <Trash className="h-3.5 w-3.5" />
+                Delete
+              </button>
+            )}
+          </Menu.Item>
+        </div>
+      </Menu.Items>
+    </Menu>
+  );
+};
+
 const AddUserDialog = ({
   isOpen,
   setIsOpen,
+  loadUsers,
 }: {
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
-}) => (
-  <Dialog open={isOpen} onOpenChange={setIsOpen}>
-    <DialogContent className="max-w-[80vw] md:max-w-[60vw] overflow-hidden rounded-lg">
-      <DialogHeader>
-        <DialogTitle className="my-4 text-xl text-[#0044A3] font-bold text-center">
-          Add a New User
-        </DialogTitle>
-      </DialogHeader>
-      <div className="mt-4 flex flex-col gap-6">
-        {/* First Name and Last Name */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <InputField
-            label="First Name"
-            name="firstName"
-            placeholder="Enter the First Name"
-          />
-          <InputField
-            label="Last Name"
-            name="lastName"
-            placeholder="Enter the Last Name"
-          />
-        </div>
+  loadUsers: () => void;
+}) => {
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone_number: "",
+    password: "",
+    confirm_password: "",
+    role: "",
+    profile: null as File | null,
+  });
 
-        {/* Email and Phone Number */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <InputField
-            label="Email"
-            name="email"
-            placeholder="Enter the Email"
-            type="email"
-          />
-          <InputField
-            label="Phone Number"
-            name="phone_number"
-            placeholder="Enter the Phone Number"
-            type="number"
-          />
-        </div>
+  const [errors, setErrors] = useState<Partial<typeof formData>>({});
+  const [submitting, setSubmitting] = useState(false);
 
-        {/* Password and Confirm Password */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <InputField
-            label="Password"
-            name="password"
-            placeholder="Enter the Password"
-            type="password"
-          />
-          <InputField
-            label="Confirm Password"
-            name="confirm_password"
-            placeholder="Enter the Confirm Password"
-            type="password"
-          />
-        </div>
+  const validateForm = () => {
+    const newErrors: Partial<typeof formData> = {};
 
-        {/* Role Selection */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="flex items-center gap-4">
-            <Label className="text-[#1E293B] w-[30%]">Role</Label>
-            <div className="flex flex-col md:flex-row gap-6 items-start w-[70%]">
-              <div className="flex items-center">
-                <input
-                  type="radio"
-                  id="manager"
-                  name="role"
-                  value="manager"
-                  className="mr-2"
-                />
-                <Label htmlFor="manager" className="text-sm">
-                  Manager
-                </Label>
-              </div>
-              <div className="flex items-center">
-                <input
-                  type="radio"
-                  id="recruiter"
-                  name="role"
-                  value="recruiter"
-                  className="mr-2"
-                />
-                <Label htmlFor="recruiter" className="text-sm">
-                  Recruiter
-                </Label>
+    if (!formData.firstName.trim())
+      newErrors.firstName = "First name is required";
+    if (!formData.lastName.trim()) newErrors.lastName = "Last name is required";
+    if (!formData.email) {
+      newErrors.email = "Email is required";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = "Invalid email format";
+    }
+    if (!formData.phone_number) {
+      newErrors.phone_number = "Phone number is required";
+    } else if (!/^\d{10,15}$/.test(formData.phone_number)) {
+      newErrors.phone_number = "Invalid phone number";
+    }
+    if (!formData.password) {
+      newErrors.password = "Password is required";
+    } else if (formData.password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters";
+    }
+    if (!formData.confirm_password) {
+      newErrors.confirm_password = "Please confirm your password";
+    } else if (formData.password !== formData.confirm_password) {
+      newErrors.confirm_password = "Passwords do not match";
+    }
+    if (!formData.role) newErrors.role = "Role is required";
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
+    const { name, value, type } = e.target;
+
+    if (type === "file" && e.target.files) {
+      const file = e.target.files[0];
+
+      if (!["image/jpeg", "image/png"].includes(file.type)) {
+        setErrors((prev) => ({
+          ...prev,
+          profile: "Only JPG/PNG files allowed",
+        }));
+        return;
+      }
+      if (file.size > 2 * 1024 * 1024) {
+        setErrors((prev) => ({ ...prev, profile: "File must be under 2MB" }));
+        return;
+      }
+
+      setFormData((prev) => ({ ...prev, profile: file }));
+      return;
+    }
+
+    setFormData((prev) => {
+      const updated = { ...prev, [name]: value };
+      return updated;
+    });
+  };
+
+  const handleSubmit = async () => {
+    if (!validateForm()) return;
+
+    setSubmitting(true);
+    try {
+      const data = new FormData();
+
+      // Append all form fields
+      Object.entries(formData).forEach(([key, value]) => {
+        if (value !== null && value !== undefined) {
+          data.append(key, value as any);
+        }
+      });
+
+      // Add any extra info outside formData
+      data.append("type", "add-user");
+
+      await axios
+        .post("http://127.0.0.1:8000/post-data", data, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        })
+        .then((response) => {
+          if (response.status == 200) {
+            setFormData({
+              firstName: "",
+              lastName: "",
+              email: "",
+              phone_number: "",
+              password: "",
+              confirm_password: "",
+              role: "",
+              profile: null,
+            });
+            setErrors({});
+            setIsOpen(false);
+            toast.success("User added successfully");
+            loadUsers();
+          }
+        })
+        .catch((error) => {
+          console.error("API Error:", error);
+        });
+    } catch (error: any) {
+      if (axios.isAxiosError(error) && error.response?.data?.errors) {
+        const backendErrors = error.response.data.errors;
+        const formattedErrors: Partial<typeof formData> = {};
+        for (const [key, value] of Object.entries(backendErrors)) {
+          formattedErrors[key as keyof typeof formData] = Array.isArray(value)
+            ? value[0]
+            : value;
+        }
+        setErrors(formattedErrors);
+      } else {
+        console.error("Unexpected error:", error);
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogContent className="max-w-[80vw] md:max-w-[60vw] overflow-hidden rounded-lg">
+        <DialogHeader>
+          <DialogTitle className="my-4 text-xl text-[#0044A3] font-bold text-center">
+            Add a New User
+          </DialogTitle>
+        </DialogHeader>
+        <div className="mt-4 flex flex-col gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <InputField
+              label="First Name"
+              name="firstName"
+              value={formData.firstName}
+              onChange={handleChange}
+              error={errors.firstName}
+              max="250"
+              placeholder="Enter the First Name"
+            />
+            <InputField
+              label="Last Name"
+              name="lastName"
+              value={formData.lastName}
+              onChange={handleChange}
+              error={errors.lastName}
+              max="250"
+              placeholder="Enter the Last Name"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <InputField
+              label="Email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              error={errors.email}
+              max="250"
+              placeholder="Enter the Email"
+              type="email"
+            />
+            <InputField
+              label="Phone Number"
+              name="phone_number"
+              value={formData.phone_number}
+              onChange={handleChange}
+              error={errors.phone_number}
+              max="20"
+              placeholder="Enter the Phone Number"
+              type="number"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <InputField
+              label="Password"
+              name="password"
+              type="password"
+              value={formData.password}
+              onChange={handleChange}
+              error={errors.password}
+              max="250"
+              placeholder="Enter the Password"
+            />
+            <InputField
+              label="Confirm Password"
+              name="confirm_password"
+              type="password"
+              value={formData.confirm_password}
+              onChange={handleChange}
+              error={errors.confirm_password}
+              max="250"
+              placeholder="Enter the Confirm Password"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="flex items-center gap-4">
+              <Label className="text-[#1E293B] w-[30%]">Role</Label>
+              <div className="w-[70%] flex flex-col gap-2">
+                <div className="flex gap-4">
+                  {["manager", "recruiter"].map((role) => (
+                    <label key={role} className="flex items-center">
+                      <input
+                        type="radio"
+                        name="role"
+                        value={role}
+                        checked={formData.role === role}
+                        onChange={handleChange}
+                        className="mr-2"
+                      />
+                      <span className="text-sm capitalize">{role}</span>
+                    </label>
+                  ))}
+                </div>
+                {errors.role && (
+                  <p className="text-red-500 text-xs mt-1 ml-2">
+                    {errors.role}
+                  </p>
+                )}
               </div>
             </div>
-          </div>
-          {/* Empty div for the second column in the grid */}
-          <div></div>
-        </div>
 
-        {/* Save and Cancel Buttons */}
-        <div className="flex justify-center gap-6 my-6">
-          <Button className="bg-[#0044A3] rounded-[3px] hover:bg-blue-950">
-            Save
-          </Button>
-          <Button
-            onClick={() => setIsOpen(false)}
-            className="bg-white rounded-[3px] hover:bg-neutral-300 border border-[#64748B] text-[#64748B]"
-          >
-            Cancel
-          </Button>
+            <div className="flex items-center gap-4">
+              <Label className="text-[#1E293B] w-[30%]">Profile</Label>
+              <Input
+                name="profile"
+                type="file"
+                onChange={handleChange}
+                className="w-[70%]"
+              />
+              {errors.profile && (
+                <p className="text-red-500 text-xs mt-1">{errors.profile}</p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex justify-center gap-6 my-6">
+            <Button
+              onClick={handleSubmit}
+              disabled={submitting}
+              className="bg-[#0044A3] rounded-[3px] hover:bg-blue-950"
+            >
+              {submitting ? "Saving..." : "Save"}
+            </Button>
+            <Button
+              onClick={() => setIsOpen(false)}
+              className="bg-white rounded-[3px] hover:bg-neutral-300 border border-[#64748B] text-[#64748B]"
+            >
+              Cancel
+            </Button>
+          </div>
         </div>
-      </div>
-    </DialogContent>
-  </Dialog>
-);
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 const DeleteDialog = ({
   isDeleteOpen,
@@ -446,57 +629,5 @@ const DeleteDialog = ({
     </DialogContent>
   </Dialog>
 );
-
-const InputField = ({
-  label,
-  name,
-  placeholder,
-  type = "text",
-}: {
-  label: string;
-  name: string;
-  placeholder: string;
-  type?: string;
-}) => (
-  <div className="flex items-center gap-4">
-    <Label className="text-[#1E293B] w-[30%]">{label}</Label>
-    <Input
-      name={name}
-      type={type}
-      placeholder={placeholder}
-      maxLength={250}
-      className="w-[70%] placeholder:text-[12px] px-4 py-5"
-    />
-  </div>
-);
-
-const PaginationSection = () => {
-  return (
-    <Pagination>
-      <PaginationContent>
-        <PaginationItem>
-          <PaginationPrevious href="#" />
-        </PaginationItem>
-        <PaginationItem>
-          <PaginationLink href="#">1</PaginationLink>
-        </PaginationItem>
-        <PaginationItem>
-          <PaginationLink href="#" isActive>
-            2
-          </PaginationLink>
-        </PaginationItem>
-        <PaginationItem>
-          <PaginationLink href="#">3</PaginationLink>
-        </PaginationItem>
-        <PaginationItem>
-          <PaginationEllipsis />
-        </PaginationItem>
-        <PaginationItem>
-          <PaginationNext href="#" />
-        </PaginationItem>
-      </PaginationContent>
-    </Pagination>
-  );
-};
 
 export default Users;

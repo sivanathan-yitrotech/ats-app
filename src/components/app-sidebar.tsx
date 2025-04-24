@@ -1,6 +1,5 @@
 import * as React from "react";
-import { SquareTerminal, Bot, BookOpen, Settings2 } from "lucide-react";
-import { NavMain } from "@/components/nav-main";
+import { SquareTerminal, Bot, BookOpen } from "lucide-react";
 import { NavProjects } from "@/components/nav-projects";
 import { NavUser } from "@/components/nav-user";
 import {

@@ -79,6 +79,11 @@ const jobPostings = Array(10)
     jobType: `${jobTypes[Math.floor(Math.random() * jobTypes.length)]}`,
     location: `Location ${i + 1}`,
     status: `${status[Math.floor(Math.random() * status.length)]}`,
+    description: `Description for Job Title ${i + 1}`,
+    recruiters: [`Recruiter ${i + 1}A`, `Recruiter ${i + 1}B`],
+    remote: `${jobTypes[Math.floor(Math.random() * jobTypes.length)]}`,
+    title: `Title ${i + 1}`,
+    company: `Company ${i + 1}`,
   }));
 
 interface jobPost {
@@ -89,6 +94,11 @@ interface jobPost {
   jobType: string;
   location: string;
   status: string;
+  description: string; // Added description property
+  recruiters: string[]; // Added recruiters property
+  remote: string; // Added remote property
+  title: string; // Added title property
+  company: string; // Added title property
 }
 
 const JobPosting = () => {
@@ -135,6 +145,10 @@ const CardSection = ({
   const cardData = [
     {
       id: 1,
+      clientName: "Client 1",
+      jobTitle: "UX Designer",
+      positions: "5",
+      jobType: "Remote",
       status: "OPEN",
       experience: "Preferred Exp: 2 – 4 years",
       title: "UX Designer",
@@ -148,6 +162,10 @@ const CardSection = ({
     },
     {
       id: 2,
+      clientName: "Client 2",
+      jobTitle: "Frontend Developer",
+      positions: "3",
+      jobType: "Hybrid",
       status: "CLOSED",
       experience: "Preferred Exp: 5 – 7 years",
       title: "Frontend Developer",
@@ -161,6 +179,10 @@ const CardSection = ({
     },
     {
       id: 3,
+      clientName: "Client 3",
+      jobTitle: "Product Manager",
+      positions: "2",
+      jobType: "Remote",
       status: "OPEN",
       experience: "Preferred Exp: 3 – 5 years",
       title: "Product Manager",
@@ -174,6 +196,10 @@ const CardSection = ({
     },
     {
       id: 4,
+      clientName: "Client 4",
+      jobTitle: "Graphic Designer",
+      positions: "4",
+      jobType: "In-office",
       status: "OPEN",
       experience: "Preferred Exp: 1 – 3 years",
       title: "Graphic Designer",
@@ -187,6 +213,10 @@ const CardSection = ({
     },
     {
       id: 5,
+      clientName: "Client 5",
+      jobTitle: "Backend Developer",
+      positions: "6",
+      jobType: "Remote",
       status: "OPEN",
       experience: "Preferred Exp: 2 – 4 years",
       title: "Backend Developer",
@@ -200,6 +230,10 @@ const CardSection = ({
     },
     {
       id: 6,
+      clientName: "Client 6",
+      jobTitle: "Data Scientist",
+      positions: "3",
+      jobType: "Hybrid",
       status: "CLOSED",
       experience: "Preferred Exp: 4 – 6 years",
       title: "Data Scientist",
@@ -468,19 +502,19 @@ const AddJobPostingDialog = ({
                 Prefered Experience
               </Label>
               <div className="w-[70%] flex justify-between items-center gap-2">
-              <Slider
-                className="w-[70%]"
-                defaultValue={[3, 6]} // Default range values
-                min={0} // Minimum value of the slider
-                max={30} // Maximum value of the slider
-                value={range} // Set the current range
-                onValueChange={handleSliderChange} // Update the range when changed
-              />
-              <p className="w-[30%] text-sm ">
-                <Badge className="bg-blue-400 rounded-full px-2 py-1 text-white font-bold">
-                  {range[0]} - {range[1]} Years
-                </Badge>
-              </p>
+                <Slider
+                  className="w-[70%]"
+                  defaultValue={[3, 6]} // Default range values
+                  min={0} // Minimum value of the slider
+                  max={30} // Maximum value of the slider
+                  value={range} // Set the current range
+                  onValueChange={handleSliderChange} // Update the range when changed
+                />
+                <p className="w-[30%] text-sm ">
+                  <Badge className="bg-blue-400 rounded-full px-2 py-1 text-white font-bold">
+                    {range[0]} - {range[1]} Years
+                  </Badge>
+                </p>
               </div>
             </div>
 
@@ -730,12 +764,20 @@ const InputField = ({
   </div>
 );
 
-const JobCardSection = ({ data, setIsOpen, setIsDeleteOpen }) => {
-  const [hoveredIndex, setHoveredIndex] = useState(null);
-  const [clickedIndex, setClickedIndex] = useState(null);
+const JobCardSection = ({
+  data,
+  setIsOpen,
+  setIsDeleteOpen,
+}: {
+  data: jobPost[];
+  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsDeleteOpen: React.Dispatch<React.SetStateAction<boolean>>;
+}) => {
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [clickedIndex, setClickedIndex] = useState<number | null>(null);
 
-  const handleHover = (index) => setHoveredIndex(index);
-  const handleClick = (index) => setClickedIndex(index);
+  const handleHover = (index: number | null) => setHoveredIndex(index);
+  const handleClick = (index: number) => setClickedIndex(index);
 
   return (
     <>
@@ -781,13 +823,13 @@ const JobCardSection = ({ data, setIsOpen, setIsDeleteOpen }) => {
                     <div className="flex flex-col gap-2">
                       <div
                         className="flex gap-2 cursor-pointer text-gray-700 hover:text-indigo-500 font-medium"
-                        onClick={setIsOpen}
+                        onClick={() => setIsOpen(true)}
                       >
                         <Pencil className="h-4 w-4" /> Edit
                       </div>
                       <div
                         className="flex gap-2 cursor-pointer text-gray-700 hover:text-red-500 font-medium"
-                        onClick={setIsDeleteOpen}
+                        onClick={() => setIsDeleteOpen(true)}
                       >
                         <Trash2 className="h-4 w-4" /> Delete
                       </div>

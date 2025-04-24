@@ -1,12 +1,9 @@
-import { GalleryVerticalEnd } from "lucide-react";
 import LoginImage from "@/assets/login.svg";
 import React, { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Cookies from "js-cookie";
-import axios from "axios";
-import Config from "@/config.json";
 import { useNavigate } from "react-router-dom";
 
 export default function Login() {
@@ -16,7 +13,7 @@ export default function Login() {
 
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     setError("");

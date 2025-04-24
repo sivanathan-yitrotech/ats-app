@@ -1,32 +1,11 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  Plus,
   ChevronsUpDown,
   Menu,
   Check,
-  Pencil,
-  Trash2,
-  List,
-  LayoutGrid,
-  MapPin,
-  EllipsisVertical,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Popover,
   PopoverContent,
@@ -325,12 +304,23 @@ const SortBy = ({
   </Popover>
 );
 
-const JobCardSection = ({ data }) => {
-  const [hoveredIndex, setHoveredIndex] = useState(null);
-  const [clickedIndex, setClickedIndex] = useState(null);
+interface JobCardData {
+  id: number;
+  status: string;
+  stage: string;
+  name: string;
+  jobPosting: string;
+  company: string;
+  mode: string;
+  interviewers: string[];
+}
 
-  const handleHover = (index) => setHoveredIndex(index);
-  const handleClick = (index) => setClickedIndex(index);
+const JobCardSection = ({ data }: { data: JobCardData[] }) => {
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  // const [clickedIndex, setClickedIndex] = useState<number | null>(null);
+
+  const handleHover = (index: number | null) => setHoveredIndex(index);
+  // const handleClick = (index: number) => setClickedIndex(index);
 
   return (
     <>
@@ -345,7 +335,7 @@ const JobCardSection = ({ data }) => {
             }`}
             onMouseEnter={() => handleHover(index)}
             onMouseLeave={() => handleHover(null)}
-            onClick={() => handleClick(index)}
+            // onClick={() => handleClick(index)}
           >
             <div className="flex justify-between items-start mb-2">
               <span

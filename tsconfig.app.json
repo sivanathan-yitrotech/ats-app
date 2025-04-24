@@ -28,5 +28,5 @@
       "@/*": ["*"] // Resolves @ to src folder
     }
   },
-  "include": ["src", "utils/common.js"]
+  "include": ["src", "utils/common.ts"]
 }

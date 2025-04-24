@@ -1,24 +1,14 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  Plus,
   ChevronsUpDown,
   Menu,
   Check,
-  Pencil,
-  Trash2,
   List,
   LayoutGrid,
   MapPin,
-  EllipsisVertical,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Table,
   TableBody,
@@ -90,92 +80,92 @@ const AssignedPositions = () => {
   );
 };
 
+const cardData = [
+  {
+    id: 1,
+    status: "OPEN",
+    experience: "Preferred Exp: 2 – 4 years",
+    title: "UX Designer",
+    company: "For ITG Communications",
+    location: "Tennessee",
+    remote: "Remote",
+    assigned_by: ["https://i.pravatar.cc/300"],
+    ctc: "10%",
+    description:
+      "We are looking for a passionate UX Designer to work on enhancing the user experience of our flagship products. You will collaborate closely with product teams to create user-centered designs and conduct usability testing.",
+  },
+  {
+    id: 2,
+    status: "CLOSED",
+    experience: "Preferred Exp: 5 – 7 years",
+    title: "Frontend Developer",
+    company: "For XYZ Technologies",
+    location: "California",
+    remote: "Hybrid",
+    assigned_by: ["https://i.pravatar.cc/300"],
+    ctc: "15%",
+    description:
+      "XYZ Technologies is seeking a skilled Frontend Developer to join our team. The ideal candidate will have expertise in JavaScript frameworks and a strong understanding of responsive web design to build and maintain high-performance web applications.",
+  },
+  {
+    id: 3,
+    status: "OPEN",
+    experience: "Preferred Exp: 3 – 5 years",
+    title: "Product Manager",
+    company: "For ABC Solutions",
+    location: "New York",
+    remote: "Remote",
+    assigned_by: ["https://i.pravatar.cc/302"],
+    ctc: "12%",
+    description:
+      "As a Product Manager at ABC Solutions, you will drive the product roadmap and collaborate with cross-functional teams to ensure successful product launches. Strong communication and project management skills are essential.",
+  },
+  {
+    id: 4,
+    status: "OPEN",
+    experience: "Preferred Exp: 1 – 3 years",
+    title: "Graphic Designer",
+    company: "For Creative Agency",
+    location: "Texas",
+    remote: "In-office",
+    assigned_by: ["https://i.pravatar.cc/304"],
+    ctc: "8%",
+    description:
+      "Creative Agency is hiring a Graphic Designer to work on a variety of branding, digital, and print design projects. You will collaborate with the creative team to develop visually compelling materials that meet client goals.",
+  },
+  {
+    id: 5,
+    status: "OPEN",
+    experience: "Preferred Exp: 2 – 4 years",
+    title: "Backend Developer",
+    company: "For Tech Corp",
+    location: "Florida",
+    remote: "Remote",
+    assigned_by: ["https://i.pravatar.cc/306"],
+    ctc: "20%",
+    description:
+      "Tech Corp is looking for a Backend Developer to design and implement server-side logic, database systems, and APIs. You'll play a key role in optimizing the performance of our backend infrastructure.",
+  },
+  {
+    id: 6,
+    status: "CLOSED",
+    experience: "Preferred Exp: 4 – 6 years",
+    title: "Data Scientist",
+    company: "For DataLabs",
+    location: "Illinois",
+    remote: "Hybrid",
+    assigned_by: ["https://i.pravatar.cc/308"],
+    ctc: "18%",
+    description:
+      "DataLabs is seeking a Data Scientist to analyze complex datasets and provide actionable insights. You’ll work closely with product and engineering teams to create predictive models and improve business outcomes.",
+  },
+];
+
 const CardSection = ({ data }: { data: jobPost[] }) => {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState<string>("");
   const [active, setActive] = useState("0");
   const [listType, setListType] = useState("list");
-
-  const cardData = [
-    {
-      id: 1,
-      status: "OPEN",
-      experience: "Preferred Exp: 2 – 4 years",
-      title: "UX Designer",
-      company: "For ITG Communications",
-      location: "Tennessee",
-      remote: "Remote",
-      assigned_by: ["https://i.pravatar.cc/300"],
-      ctc: "10%",
-      description:
-        "We are looking for a passionate UX Designer to work on enhancing the user experience of our flagship products. You will collaborate closely with product teams to create user-centered designs and conduct usability testing.",
-    },
-    {
-      id: 2,
-      status: "CLOSED",
-      experience: "Preferred Exp: 5 – 7 years",
-      title: "Frontend Developer",
-      company: "For XYZ Technologies",
-      location: "California",
-      remote: "Hybrid",
-      assigned_by: ["https://i.pravatar.cc/300"],
-      ctc: "15%",
-      description:
-        "XYZ Technologies is seeking a skilled Frontend Developer to join our team. The ideal candidate will have expertise in JavaScript frameworks and a strong understanding of responsive web design to build and maintain high-performance web applications.",
-    },
-    {
-      id: 3,
-      status: "OPEN",
-      experience: "Preferred Exp: 3 – 5 years",
-      title: "Product Manager",
-      company: "For ABC Solutions",
-      location: "New York",
-      remote: "Remote",
-      assigned_by: ["https://i.pravatar.cc/302"],
-      ctc: "12%",
-      description:
-        "As a Product Manager at ABC Solutions, you will drive the product roadmap and collaborate with cross-functional teams to ensure successful product launches. Strong communication and project management skills are essential.",
-    },
-    {
-      id: 4,
-      status: "OPEN",
-      experience: "Preferred Exp: 1 – 3 years",
-      title: "Graphic Designer",
-      company: "For Creative Agency",
-      location: "Texas",
-      remote: "In-office",
-      assigned_by: ["https://i.pravatar.cc/304"],
-      ctc: "8%",
-      description:
-        "Creative Agency is hiring a Graphic Designer to work on a variety of branding, digital, and print design projects. You will collaborate with the creative team to develop visually compelling materials that meet client goals.",
-    },
-    {
-      id: 5,
-      status: "OPEN",
-      experience: "Preferred Exp: 2 – 4 years",
-      title: "Backend Developer",
-      company: "For Tech Corp",
-      location: "Florida",
-      remote: "Remote",
-      assigned_by: ["https://i.pravatar.cc/306"],
-      ctc: "20%",
-      description:
-        "Tech Corp is looking for a Backend Developer to design and implement server-side logic, database systems, and APIs. You'll play a key role in optimizing the performance of our backend infrastructure.",
-    },
-    {
-      id: 6,
-      status: "CLOSED",
-      experience: "Preferred Exp: 4 – 6 years",
-      title: "Data Scientist",
-      company: "For DataLabs",
-      location: "Illinois",
-      remote: "Hybrid",
-      assigned_by: ["https://i.pravatar.cc/308"],
-      ctc: "18%",
-      description:
-        "DataLabs is seeking a Data Scientist to analyze complex datasets and provide actionable insights. You’ll work closely with product and engineering teams to create predictive models and improve business outcomes.",
-    },
-  ];
 
   const sortBy = [
     { value: "a-z", label: "A-Z" },
@@ -346,12 +336,12 @@ const ClientTable = ({ data }: { data: jobPost[] }) => (
   </div>
 );
 
-const JobCardSection = ({ data }) => {
-  const [hoveredIndex, setHoveredIndex] = useState(null);
-  const [clickedIndex, setClickedIndex] = useState(null);
+const JobCardSection = ({ data }: { data: typeof cardData }) => {
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [clickedIndex, setClickedIndex] = useState<number | null>(null);
 
-  const handleHover = (index) => setHoveredIndex(index);
-  const handleClick = (index) => {
+  const handleHover = (index: number | null) => setHoveredIndex(index);
+  const handleClick = (index: number) => {
     // Toggle clicked state
     setClickedIndex((prevClickedIndex) =>
       prevClickedIndex === index ? null : index

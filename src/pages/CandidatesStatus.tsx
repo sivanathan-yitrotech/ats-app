@@ -1,21 +1,6 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Plus,
-  ChevronsUpDown,
-  Menu,
-  Check,
-  Pencil,
-  Trash2,
-  List,
-  LayoutGrid,
-  MapPin,
-  EllipsisVertical,
-  Mail,
-  Phone,
-  Edit,
-  Edit2,
-} from "lucide-react";
+import { ChevronsUpDown, Check, Mail, Phone, Edit2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -32,21 +17,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Popover,
   PopoverContent,
@@ -67,7 +37,7 @@ import {
   PaginationNext,
 } from "@/components/ui/pagination";
 import { Textarea } from "@/components/ui/textarea";
-const generateCandidate = (status, index) => {
+const generateCandidate = (status: string, index: number) => {
   const names = ["John Doe", "Alice Smith", "Bob Martin"];
   const titles = ["Software Engineer", "Data Scientist", "Backend Developer"];
   const companies = ["TechCorp", "DataWorks", "TechX"];
@@ -111,7 +81,18 @@ const generateCandidate = (status, index) => {
   };
 };
 
-const candidatesStatus = {
+type Candidate = {
+  name: string;
+  mobile: string;
+  email: string;
+  title: string;
+  company: string;
+  status: string;
+  recruiters: { [key: string]: string }[];
+  interviewers: { [key: string]: string }[];
+};
+
+const candidatesStatus: Record<string, Candidate[]> = {
   sourced: [],
   l1: [],
   l2: [],
@@ -123,7 +104,10 @@ const candidatesStatus = {
 };
 
 // Loop to generate more sample candidates for each status
-const generateMoreCandidates = (statusTypes, numberOfCandidates) => {
+const generateMoreCandidates = (
+  statusTypes: (keyof typeof candidatesStatus)[],
+  numberOfCandidates: number
+) => {
   statusTypes.forEach((status) => {
     for (let i = 0; i < numberOfCandidates; i++) {
       candidatesStatus[status].push(generateCandidate(status, i));
@@ -156,7 +140,16 @@ const AssignedPositions = () => {
     </div>
   );
 };
-const CardSection = ({ data, isOpen, setIsOpen }) => {
+
+const CardSection = ({
+  data,
+  isOpen,
+  setIsOpen,
+}: {
+  data: Record<string, Candidate[]>;
+  isOpen: boolean;
+  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+}) => {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState("");
 
@@ -170,12 +163,12 @@ const CardSection = ({ data, isOpen, setIsOpen }) => {
 
   return (
     <div className="my-10 p-4 bg-white shadow-lg rounded-lg">
-      <div className="flex items-center justify-between gap-6 mb-6">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
         {["Client Name", "Job Postings", "Recruiter"].map((label, index) => (
           <div key={index} className="flex flex-col flex-1 gap-2">
             <Label className="text-gray-800 text-sm font-medium">{label}</Label>
             <Select name={label.toLowerCase().replace(" ", "")}>
-              <SelectTrigger className="w-full bg-gray-100 border border-gray-300 rounded-md py-3 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+              <SelectTrigger className="w-full border border-gray-300 rounded-md py-3 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
                 <SelectValue placeholder={`Select ${label}`} />
               </SelectTrigger>
               <SelectContent>
@@ -187,11 +180,11 @@ const CardSection = ({ data, isOpen, setIsOpen }) => {
             </Select>
           </div>
         ))}
-        <div className="flex items-center justify-between gap-4 pt-7">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 sm:pt-0">
           <Input
             type="text"
             placeholder="Search"
-            className="w-full max-w-xs bg-gray-100 border border-gray-300 rounded-md py-3 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="w-full mt-7 max-w-xs border border-gray-300 rounded-md py-3 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
             onChange={(e) => console.log(e.target.value)} // Placeholder for search logic
           />
           <SortBy
@@ -221,7 +214,15 @@ const CardSection = ({ data, isOpen, setIsOpen }) => {
             <div
               key={index}
               className={`p-3 mt-4 max-h-screen overflow-y-auto flex flex-col items-center gap-2 rounded-lg ${getStatusColor(
-                status
+                status as
+                  | "sourced"
+                  | "l1"
+                  | "l2"
+                  | "l3"
+                  | "offered"
+                  | "onboard"
+                  | "denied"
+                  | "rejected"
               )}`}
             >
               <CandidateCard
@@ -238,31 +239,52 @@ const CardSection = ({ data, isOpen, setIsOpen }) => {
   );
 };
 
-const getStatusColor = (status) => {
+const colors = {
+  sourced: "bg-[#EFF6FF]",
+  l1: "bg-[#F5F3FF]",
+  l2: "bg-[#ECFDF5]",
+  l3: "bg-[#FEF3C7]",
+  offered: "bg-[#E0F2FE]",
+  onboard: "bg-[#DCFCE7]",
+  denied: "bg-[#FEE2E2]",
+  rejected: "bg-red-50",
+};
+
+const getStatusColor = (status: keyof typeof colors) => {
   const colors = {
-    sourced: "bg-slate-100",
-    l1: "bg-orange-100",
-    l2: "bg-amber-100",
-    l3: "bg-yellow-100",
-    offered: "bg-lime-100",
-    onboard: "bg-green-100",
-    denied: "bg-pink-100",
-    rejected: "bg-red-100",
+    sourced: "bg-[#EFF6FF]",
+    l1: "bg-[#F5F3FF]",
+    l2: "bg-[#ECFDF5]",
+    l3: "bg-[#FEF3C7]",
+    offered: "bg-[#E0F2FE]",
+    onboard: "bg-[#DCFCE7]",
+    denied: "bg-[#FEE2E2]",
+    rejected: "bg-red-50",
   };
   return colors[status] || "bg-gray-100";
 };
 
-const capitalizeFirstLetter = (string) => {
+const capitalizeFirstLetter = (string: string) => {
   return string.charAt(0).toUpperCase() + string.slice(1);
 };
 
-const CandidateCard = ({ data, type, isOpen, setIsOpen }) => {
+const CandidateCard = ({
+  data,
+  type,
+  isOpen,
+  setIsOpen,
+}: {
+  data: Candidate[];
+  type: string;
+  isOpen: boolean;
+  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+}) => {
   return (
     <>
       {data.map((card, index) => (
         <div
           key={index}
-          className="w-full my-2 bg-gray-100 p-4 rounded-lg shadow-lg border border-gray-200 transform transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-2xl"
+          className="w-full my-2 bg-white p-4 rounded-lg shadow-lg border border-gray-200 transform transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-2xl"
         >
           <div className="mb-3">
             <div className="flex items-center justify-between relative">
@@ -272,6 +294,7 @@ const CandidateCard = ({ data, type, isOpen, setIsOpen }) => {
                 size={12}
                 className="absolute right-2 top-2 text-gray-500 hover:text-blue-500 cursor-pointer"
               />
+              {isOpen && <span></span>}
             </div>
 
             <h3 className="text-[12px] font-medium">{card.title}</h3>
@@ -299,7 +322,6 @@ const CandidateCard = ({ data, type, isOpen, setIsOpen }) => {
                   <p className="text-[10px] font-semibold mb-1">Recruiters</p>
                   <div className="flex -space-x-2">
                     {card.recruiters.map((recruiter, recruiterIndex) => {
-                      const recruiterImage = Object.values(recruiter)[0];
                       const recruiterName = Object.keys(recruiter)[0];
                       return (
                         <div key={recruiterIndex} className="relative group">
@@ -322,8 +344,6 @@ const CandidateCard = ({ data, type, isOpen, setIsOpen }) => {
                     <div className="flex -space-x-2">
                       {card.interviewers.map(
                         (interviewer, interviewerIndex) => {
-                          const interviewerImage =
-                            Object.values(interviewer)[0];
                           const interviewerName = Object.keys(interviewer)[0];
                           return (
                             <div
@@ -362,13 +382,9 @@ const UpdateStatusDialog = ({
   const [status, setStatus] = useState("0");
   const [isFeeded, setIsFeeded] = useState(false);
   const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
-  const handleSubmit = ({ isFeeded }) => {
-    if (isFeeded) {
-      setIsFeeded(true);
-    } else {
-      setIsFeeded(false);
-      setIsOpen(false);
-    }
+  const handleSubmit = ({ isFeeded }: { isFeeded: boolean }) => {
+    console.log(isFeeded);
+    setIsFeeded(true);
   };
 
   return (
@@ -597,9 +613,10 @@ const UpdateStatusDialog = ({
                 className="bg-[#0044A3] text-white px-6 py-3 rounded-md hover:bg-blue-950"
                 onClick={() => {
                   if (status === "7") {
+                    setIsOpen(false);
                     setIsInvoiceOpen(true); // Open the invoice when status is "7"
                   }
-                  handleSubmit(isFeeded); // Then, submit the form with the current feeded state
+                  handleSubmit({ isFeeded }); // Then, submit the form with the current feeded state
                 }}
               >
                 {["3", "4"].includes(status) && !isFeeded
@@ -712,7 +729,7 @@ const Rating = () => {
   const [rating, setRating] = useState(0);
 
   // Handle click on star to update rating
-  const handleRating = (index) => {
+  const handleRating = (index: number) => {
     setRating(index + 1); // Set rating to the clicked star's index + 1
   };
 
@@ -755,7 +772,7 @@ const SortBy = ({
   sortBy: { value: string; label: string }[];
 }) => (
   <Popover open={open} onOpenChange={setOpen}>
-    <PopoverTrigger asChild>
+    <PopoverTrigger asChild className="mt-7">
       <Button variant="outline" className="w-auto justify-between">
         {value ? sortBy.find((item) => item.value === value)?.label : "Sort By"}
         <ChevronsUpDown className="opacity-50" />
