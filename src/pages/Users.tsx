@@ -12,19 +12,12 @@ import {
   Pencil,
   Trash,
 } from "lucide-react";
-import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
-import {
-  Menu,
-  MenuButton,
-  MenuItem,
-  MenuItems,
-  MenuSection,
-} from "@headlessui/react";
+import { Menu } from "@headlessui/react";
 import {
   Dialog,
   DialogContent,
@@ -33,6 +26,7 @@ import {
 } from "@/components/ui/dialog";
 
 interface User {
+  id: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -51,12 +45,16 @@ const Users = () => {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
 
+  const [errors, setErrors] = useState<
+    Partial<Omit<typeof formData, "profile"> & { profile: string | null }>
+  >({});
+
   const loadUsers = () => {
     axios
       .get(`http://127.0.0.1:8000/get-data`, {
         params: {
           type: "users-list",
-          page: "page",
+          page: page,
           limit: limit,
           filterby: filterBy,
           sortby: sortBy,
@@ -76,6 +74,20 @@ const Users = () => {
     loadUsers();
   }, [filterBy, sortBy, search, page]);
 
+  const [formData, setFormData] = useState({
+    id: "",
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone_number: "",
+    password: "",
+    confirm_password: "",
+    role: "",
+    profile: null as File | null,
+  });
+
+  const [deleteId, setDeleteId] = useState("0");
+
   return (
     <div className="p-4">
       <CardSection
@@ -85,6 +97,11 @@ const Users = () => {
         setFilterBy={setFilterBy}
         setSortBy={setSortBy}
         setSearch={setSearch}
+        formData={formData}
+        setFormData={setFormData}
+        errors={errors}
+        setErrors={setErrors}
+        setDeleteId={setDeleteId}
       />
       <PaginationSection
         total={total}
@@ -96,10 +113,16 @@ const Users = () => {
         isOpen={isOpen}
         setIsOpen={setIsOpen}
         loadUsers={loadUsers}
+        formData={formData}
+        setFormData={setFormData}
+        errors={errors}
+        setErrors={setErrors}
       />
       <DeleteDialog
         isDeleteOpen={isDeleteOpen}
         setIsDeleteOpen={setIsDeleteOpen}
+        deleteId={deleteId}
+        loadUsers={loadUsers}
       />
       <Toaster />
     </div>
@@ -113,6 +136,11 @@ const CardSection = ({
   setFilterBy,
   setSortBy,
   setSearch,
+  formData,
+  setFormData,
+  errors,
+  setErrors,
+  setDeleteId,
 }: {
   data: User[];
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -120,10 +148,17 @@ const CardSection = ({
   setFilterBy: React.Dispatch<React.SetStateAction<string>>;
   setSortBy: React.Dispatch<React.SetStateAction<string>>;
   setSearch: React.Dispatch<React.SetStateAction<string>>;
+  formData: React.Dispatch<React.SetStateAction<FormData>>;
+  setFormData: React.Dispatch<React.SetStateAction<FormData>>;
+  errors: React.Dispatch<React.SetStateAction<object>>;
+  setErrors: React.Dispatch<React.SetStateAction<object>>;
+  setDeleteId: React.Dispatch<React.SetStateAction<string>>;
 }) => {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState<string>("");
   const [active, setActive] = useState("0");
+
+  console.log(formData);
 
   const sortOptions = [
     { value: "a-z", label: "A-Z" },
@@ -174,13 +209,15 @@ const CardSection = ({
             open={open}
             setOpen={setOpen}
             value={value}
-            setValue={handleSortChange}
+            setValue={(val) => handleSortChange(val as string)}
             sortBy={sortOptions}
           />
           <Button
             variant="secondary"
             className="ml-4 cursor-pointer"
-            onClick={() => setIsOpen(true)}
+            onClick={() => {
+              setIsOpen(true), setFormData({}), setErrors({});
+            }}
           >
             <Plus className="mr-2 h-4 w-4" /> Add User
           </Button>
@@ -193,8 +230,10 @@ const CardSection = ({
             <UsersCard
               key={index}
               user={user}
-              editData={() => setIsOpen(true)}
-              deleteData={() => setIsDeleteOpen(true)}
+              setIsOpen={setIsOpen}
+              setIsDeleteOpen={setIsDeleteOpen}
+              setFormData={setFormData}
+              setDeleteId={setDeleteId}
             />
           ))}
         </div>
@@ -207,13 +246,51 @@ const CardSection = ({
 
 const UsersCard = ({
   user,
-  editData,
-  deleteData,
+  setIsOpen,
+  setIsDeleteOpen,
+  setFormData,
+  setDeleteId,
 }: {
   user: User;
-  editData: () => void;
-  deleteData: () => void;
+  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsDeleteOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  setFormData: React.Dispatch<React.SetStateAction<FormData>>;
+  setDeleteId: React.Dispatch<React.SetStateAction<string>>;
 }) => {
+  const editData = () => {
+    axios
+      .get(`http://127.0.0.1:8000/get-data`, {
+        params: {
+          type: "edit-user",
+          id: user.id,
+        },
+      })
+      .then((response) => {
+        const data = response.data.data;
+        console.log(data);
+        setFormData({
+          id: data.id,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email,
+          phone_number: data.phoneNumber,
+          password: "",
+          confirm_password: "",
+          role: data.role,
+          profile: data.profile,
+        });
+        setIsOpen(true);
+      })
+      .catch((error) => {
+        console.error("API Error:", error);
+      });
+  };
+
+  const deleteData = (id: string) => {
+    setDeleteId(id);
+    setIsDeleteOpen(true);
+  };
+
   return (
     <div className="transition-all transform duration-300 hover:scale-105 outfit-regular w-full rounded-2xl bg-gradient-to-r from-zinc-50 to-neutral-100 border border-gray-200 p-4 shadow-lg hover:shadow-2xl flex flex-col space-y-4 font-[Outfit]">
       <div className="flex justify-between items-center">
@@ -221,7 +298,12 @@ const UsersCard = ({
           {user.firstName} {user.lastName}
         </p>
         <div className="flex flex-row-reverse items-center gap-2 text-[13px] text-gray-600">
-          <ActionSection id={"1"} editData={editData} deleteData={deleteData} />
+          <ActionSection
+            id={user.id}
+            editData={editData}
+            deleteData={deleteData}
+            setDeleteId={setDeleteId}
+          />
           <Badge
             className={`text-[10px] text-black px-2 py-1 rounded-full ${
               user.role === "manager" ? "bg-lime-200" : "bg-teal-200"
@@ -246,18 +328,22 @@ const UsersCard = ({
       </div>
 
       <div className="border-t border-gray-300 pt-2 mt-4">
-        <p className="text-[10px] text-gray-500">Last updated: N/A</p>
+        <p className="text-[10px] text-gray-500">
+          Last updated: {user.last_updated}
+        </p>
       </div>
     </div>
   );
 };
 
 const ActionSection = ({
+  id,
   editData,
   deleteData,
 }: {
+  id: string;
   editData: () => void;
-  deleteData: () => void;
+  deleteData: (id: string) => void;
 }) => {
   return (
     <Menu as="div" className="relative inline-block text-left">
@@ -285,7 +371,7 @@ const ActionSection = ({
           <Menu.Item>
             {({ active }) => (
               <button
-                onClick={deleteData}
+                onClick={() => deleteData(id)}
                 className={`flex items-center gap-1.5 w-full px-3 py-1.5 transition-colors rounded-sm ${
                   active ? "bg-red-50 text-red-600" : "hover:bg-gray-50"
                 }`}
@@ -305,27 +391,25 @@ const AddUserDialog = ({
   isOpen,
   setIsOpen,
   loadUsers,
+  formData,
+  setFormData,
+  errors,
+  setErrors,
 }: {
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   loadUsers: () => void;
+  formData: React.Dispatch<React.SetStateAction<FormData>>;
+  setFormData: React.Dispatch<React.SetStateAction<FormData>>;
+  errors: React.Dispatch<React.SetStateAction<object>>;
+  setErrors: React.Dispatch<React.SetStateAction<object>>;
 }) => {
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone_number: "",
-    password: "",
-    confirm_password: "",
-    role: "",
-    profile: null as File | null,
-  });
-
-  const [errors, setErrors] = useState<Partial<typeof formData>>({});
   const [submitting, setSubmitting] = useState(false);
 
   const validateForm = () => {
-    const newErrors: Partial<typeof formData> = {};
+    const newErrors: Partial<
+      Omit<typeof formData, "profile"> & { profile: string | null }
+    > = {};
 
     if (!formData.firstName.trim())
       newErrors.firstName = "First name is required";
@@ -340,19 +424,22 @@ const AddUserDialog = ({
     } else if (!/^\d{10,15}$/.test(formData.phone_number)) {
       newErrors.phone_number = "Invalid phone number";
     }
-    if (!formData.password) {
+    if (!formData.password && !formData.id) {
       newErrors.password = "Password is required";
-    } else if (formData.password.length < 6) {
+    } else if (formData.password.length < 6 && formData.password) {
       newErrors.password = "Password must be at least 6 characters";
     }
-    if (!formData.confirm_password) {
+    if (!formData.confirm_password && !formData.id) {
       newErrors.confirm_password = "Please confirm your password";
     } else if (formData.password !== formData.confirm_password) {
       newErrors.confirm_password = "Passwords do not match";
     }
     if (!formData.role) newErrors.role = "Role is required";
 
-    setErrors(newErrors);
+    setErrors({
+      ...newErrors,
+      profile: newErrors.profile ? String(newErrors.profile) : null,
+    });
     return Object.keys(newErrors).length === 0;
   };
 
@@ -363,7 +450,11 @@ const AddUserDialog = ({
   ) => {
     const { name, value, type } = e.target;
 
-    if (type === "file" && e.target.files) {
+    if (
+      type === "file" &&
+      e.target instanceof HTMLInputElement &&
+      e.target.files
+    ) {
       const file = e.target.files[0];
 
       if (!["image/jpeg", "image/png"].includes(file.type)) {
@@ -414,6 +505,7 @@ const AddUserDialog = ({
         .then((response) => {
           if (response.status == 200) {
             setFormData({
+              id: "",
               firstName: "",
               lastName: "",
               email: "",
@@ -425,7 +517,9 @@ const AddUserDialog = ({
             });
             setErrors({});
             setIsOpen(false);
-            toast.success("User added successfully");
+            toast.success(
+              `User ${formData.id ? "updated" : "added"} successfully`
+            );
             loadUsers();
           }
         })
@@ -441,7 +535,12 @@ const AddUserDialog = ({
             ? value[0]
             : value;
         }
-        setErrors(formattedErrors);
+        setErrors({
+          ...formattedErrors,
+          profile: formattedErrors.profile
+            ? String(formattedErrors.profile)
+            : null,
+        });
       } else {
         console.error("Unexpected error:", error);
       }
@@ -459,6 +558,11 @@ const AddUserDialog = ({
           </DialogTitle>
         </DialogHeader>
         <div className="mt-4 flex flex-col gap-6">
+          {formData.profile && (
+            <div className="flex justify-center items-center">
+              <img src={formData.profile} className="rounded-full w-25 h-25" />
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <InputField
               label="First Name"
@@ -591,43 +695,63 @@ const AddUserDialog = ({
 const DeleteDialog = ({
   isDeleteOpen,
   setIsDeleteOpen,
+  deleteId,
+  loadUsers,
 }: {
   isDeleteOpen: boolean;
   setIsDeleteOpen: React.Dispatch<React.SetStateAction<boolean>>;
-}) => (
-  <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-    <DialogContent className="rounded-lg">
-      <DialogHeader>
-        <DialogTitle className="my-1 text-lg text-[#0044A3] text-center">
-          Are You Sure You Want to Delete?
-        </DialogTitle>
-      </DialogHeader>
-      <div className="mt-1 flex flex-col gap-6">
-        <p className="text-center text-sm text-[#333333]">
-          This action cannot be undone.
-        </p>
+  deleteId: string;
+  loadUsers: () => void;
+}) => {
+  const deleteData = () => {
+    axios
+      .post(`http://127.0.0.1:8000/post-data`, {
+        type: "delete-user",
+        id: deleteId,
+      })
+      .then((response) => {
+        const data = response.data.data;
+        setIsDeleteOpen(false);
+        toast.success("User deleted successfully");
+        loadUsers();
+      })
+      .catch((error) => {
+        console.error("API Error:", error);
+      });
+  };
 
-        {/* Confirmation Action Buttons */}
-        <div className="flex justify-center gap-6 my-3">
-          <Button
-            onClick={() => {
-              // Handle delete logic here
-              setIsDeleteOpen(false);
-            }}
-            className="bg-red-600 text-white rounded-[3px] hover:bg-red-800"
-          >
-            Delete
-          </Button>
-          <Button
-            onClick={() => setIsDeleteOpen(false)}
-            className="bg-white rounded-[3px] hover:bg-neutral-300 border border-[#64748B] text-[#64748B]"
-          >
-            Cancel
-          </Button>
+  return (
+    <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+      <DialogContent className="rounded-lg">
+        <DialogHeader>
+          <DialogTitle className="my-1 text-lg text-[#0044A3] text-center">
+            Are You Sure You Want to Delete?
+          </DialogTitle>
+        </DialogHeader>
+        <div className="mt-1 flex flex-col gap-6">
+          <p className="text-center text-sm text-[#333333]">
+            This action cannot be undone.
+          </p>
+
+          {/* Confirmation Action Buttons */}
+          <div className="flex justify-center gap-6 my-3">
+            <Button
+              onClick={deleteData}
+              className="bg-red-600 text-white rounded-[3px] hover:bg-red-800"
+            >
+              Delete
+            </Button>
+            <Button
+              onClick={() => setIsDeleteOpen(false)}
+              className="bg-white rounded-[3px] hover:bg-neutral-300 border border-[#64748B] text-[#64748B]"
+            >
+              Cancel
+            </Button>
+          </div>
         </div>
-      </div>
-    </DialogContent>
-  </Dialog>
-);
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 export default Users;
