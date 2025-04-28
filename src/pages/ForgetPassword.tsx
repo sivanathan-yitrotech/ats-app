@@ -4,16 +4,21 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import axios from "axios"; // Import axios
 
 export default function ForgerPassword() {
   const [email, setEmail] = useState("");
   const [error, setErrors] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     // Reset error messages on every submit attempt
     setErrors("");
+    setSuccessMessage(""); // Reset success message
 
     // Validation
     let valid = true;
@@ -21,7 +26,6 @@ export default function ForgerPassword() {
     if (!email) {
       setErrors("Please enter your email address.");
       return false;
-      valid = false;
     } else {
       // Basic email validation regex
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -30,16 +34,44 @@ export default function ForgerPassword() {
           "The email address you entered is invalid. Please try again."
         );
         return false;
-        valid = false;
       }
     }
 
     if (valid) {
-      console.log(email);
+      try {
+        setSubmitting(true);
+        const formData = new FormData();
+        formData.append("email", email);
+        formData.append("type", "reset-password");
+
+        const response = await axios.post(
+          "http://127.0.0.1:8000/post-data",
+          formData,
+          {
+            headers: { "Content-Type": "multipart/form-data" },
+          }
+        );
+
+        if (response.data.result) {
+          setSuccessMessage(
+            "A reset link has been sent to your email address."
+          );
+        } else {
+          setErrors("No account found with that email address.");
+        }
+      } catch (error) {
+        if (axios.isAxiosError(error)) {
+          setErrors(
+            "An error occurred while sending the reset link. Please try again later."
+          );
+        } else {
+          setErrors("An unexpected error occurred.");
+        }
+      } finally {
+        setSubmitting(false);
+      }
     }
   };
-
-  const navigate = useNavigate();
 
   return (
     <div className="grid min-h-svh lg:grid-cols-2">
@@ -84,6 +116,11 @@ export default function ForgerPassword() {
                 {error && (
                   <div className="text-red-500 text-[12px] mb-2">{error}</div>
                 )}
+                {successMessage && (
+                  <div className="text-green-500 text-[12px] mb-2">
+                    {successMessage}
+                  </div>
+                )}
               </div>
               <div className="flex flex-row gap-6 justify-center mb-4">
                 <Button
@@ -95,9 +132,10 @@ export default function ForgerPassword() {
                 </Button>
                 <Button
                   type="submit"
+                  disabled={submitting}
                   className="bg-[#0044A3] rounded-[3px] cursor-pointer hover:bg-blue-950 text-white"
                 >
-                  Send Reset Link
+                  {submitting ? "Sending..." : "Send Reset Link"}
                 </Button>
               </div>
             </form>

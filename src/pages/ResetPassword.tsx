@@ -3,46 +3,64 @@ import React, { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import axios from "axios";
 
 export default function ResetPassword() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setErrors] = useState("");
+  const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    // Reset error messages on every submit attempt
-    setErrors("");
-
-    // Validation
-    let valid = true;
-
-    // Password validation
-    if (!password) {
-      setErrors("Please enter your new password.");
-      valid = false;
-    } else if (password.length < 6) {
-      setErrors("Password must be at least 6 characters long.");
-      valid = false;
-    }
-
-    // Confirm password validation
-    if (!confirmPassword) {
-      setErrors("Please confirm your password.");
-      valid = false;
-    } else if (confirmPassword !== password) {
-      setErrors("Passwords do not match.");
-      valid = false;
-    }
-
-    if (valid) {
-      console.log("Password reset successful"); // You can add the reset logic here
-      // Optionally navigate to another page after success (e.g., login page)
-      // navigate("/login");
-    }
+  const validateForm = () => {
+    if (!password) return "Please enter your new password.";
+    if (password.length < 6)
+      return "Password must be at least 6 characters long.";
+    if (!confirmPassword) return "Please confirm your password.";
+    if (confirmPassword !== password) return "Passwords do not match.";
+    return "";
   };
 
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError("");
+    setSuccessMessage("");
+
+    const validationError = validateForm();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    setSubmitting(true);
+    const secretCode = "sdasdasd"; // This should be passed securely
+    const formData = new FormData();
+    formData.append("code", secretCode);
+    formData.append("password", password);
+    formData.append("type", "update-password");
+
+    try {
+      const response = await axios.post(
+        "http://127.0.0.1:8000/post-data",
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
+
+      if (response.data.result) {
+        setSuccessMessage("Password has been updated successfully.");
+      } else {
+        setError("Password not updated.");
+      }
+    } catch (error) {
+      setError(
+        "An error occurred while sending the reset link. Please try again later."
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
@@ -97,17 +115,23 @@ export default function ResetPassword() {
                   className="sm:w-[70%] placeholder:text-[12px] px-4 py-2 border rounded-md"
                 />
               </div>
-              <div className="text-center text-[#0044A3] mt-2">
-                {error && (
-                  <div className="text-red-500 text-[12px] mb-2">{error}</div>
-                )}
-              </div>
+              {error && (
+                <div className="text-red-500 text-[12px] mb-2 text-center">
+                  {error}
+                </div>
+              )}
+              {successMessage && (
+                <div className="text-green-500 text-[12px] mb-2 text-center">
+                  {successMessage}
+                </div>
+              )}
               <div className="flex flex-row gap-6 justify-center mb-4">
                 <Button
                   type="submit"
+                  disabled={submitting}
                   className="bg-[#0044A3] rounded-[3px] cursor-pointer hover:bg-blue-950 text-white"
                 >
-                  Reset Password
+                  {submitting ? "Updating..." : "Reset Password"}
                 </Button>
               </div>
             </form>
