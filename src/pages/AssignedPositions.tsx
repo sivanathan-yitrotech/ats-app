@@ -1,13 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  ChevronsUpDown,
-  Menu,
-  Check,
-  List,
-  LayoutGrid,
-  MapPin,
-} from "lucide-react";
+import { Menu, List, LayoutGrid, MapPin } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -17,54 +10,65 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Command,
-  CommandGroup,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationPrevious,
-  PaginationNext,
-} from "@/components/ui/pagination";
 import { Badge } from "@/components/ui/badge";
+import axios from "axios";
+import { Toaster } from "@/components/ui/sonner";
+import { toast } from "sonner";
+import PaginationSection from "@/components/ui/page";
+import NoData from "@/components/ui/nodata";
+import SortBy from "@/components/ui/sortby";
+import { ucFirst } from "../../utils/common";
 
 const tableHeaderClass = "text-[#0044A3] font-semibold text-sm py-3 px-6";
 const cellClass = "text-sm font-medium text-gray-700 py-3 px-6";
-const jobTypes = ["On-Site", "Hybrid", "Remote"];
-const status = ["Open", "Close", "Hold"];
-const jobPostings = Array(10)
-  .fill(null)
-  .map((_, i) => ({
-    clientName: `Client ${i + 1}`,
-    jobTitle: `Job Title ${i + 1}`,
-    positions: `${Math.ceil(Math.random() * 50)}`,
-    experience: `${Math.ceil(Math.random() * 10)}`,
-    jobType: `${jobTypes[Math.floor(Math.random() * jobTypes.length)]}`,
-    location: `Location ${i + 1}`,
-    status: `${status[Math.floor(Math.random() * status.length)]}`,
-  }));
 
 interface jobPost {
   clientName: string;
+  companyName: string;
   jobTitle: string;
   positions: string;
   experience: string;
   jobType: string;
   location: string;
   status: string;
+  assigned_by: string;
+  description: string;
 }
 
 const AssignedPositions = () => {
+  const [jobPostings, setJobPostings] = useState<jobPost[]>([]);
+  const [filterBy, setFilterBy] = useState("0");
+  const [sortBy, setSortBy] = useState("");
+  const [search, setSearch] = useState("");
+  const limit = 20;
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+
+  const loadJobPostings = () => {
+    axios
+      .get(`http://127.0.0.1:8000/get-data`, {
+        params: {
+          type: "jobpostings-list",
+          page: page,
+          limit: limit,
+          filterby: filterBy,
+          sortby: sortBy,
+          searchby: search,
+        },
+      })
+      .then((response) => {
+        setJobPostings(response.data.data);
+        setTotal(75);
+      })
+      .catch((error) => {
+        console.error("API Error:", error);
+      });
+  };
+
+  useEffect(() => {
+    loadJobPostings();
+  }, [filterBy, sortBy, search, page]);
+
   return (
     <div className="p-4">
       <div className="flex flex-col items-center mb-6">
@@ -74,106 +78,55 @@ const AssignedPositions = () => {
           one place.
         </p>
       </div>
-      <CardSection data={jobPostings} />
-      <PaginationSection />
+      <CardSection
+        data={jobPostings}
+        setFilterBy={setFilterBy}
+        setSortBy={setSortBy}
+        setSearch={setSearch}
+      />
+      <PaginationSection
+        total={total}
+        limit={limit}
+        page={page}
+        setPage={setPage}
+      />
+      <Toaster />
     </div>
   );
 };
 
-const cardData = [
-  {
-    id: 1,
-    status: "OPEN",
-    experience: "Preferred Exp: 2 – 4 years",
-    title: "UX Designer",
-    company: "For ITG Communications",
-    location: "Tennessee",
-    remote: "Remote",
-    assigned_by: ["https://i.pravatar.cc/300"],
-    ctc: "10%",
-    description:
-      "We are looking for a passionate UX Designer to work on enhancing the user experience of our flagship products. You will collaborate closely with product teams to create user-centered designs and conduct usability testing.",
-  },
-  {
-    id: 2,
-    status: "CLOSED",
-    experience: "Preferred Exp: 5 – 7 years",
-    title: "Frontend Developer",
-    company: "For XYZ Technologies",
-    location: "California",
-    remote: "Hybrid",
-    assigned_by: ["https://i.pravatar.cc/300"],
-    ctc: "15%",
-    description:
-      "XYZ Technologies is seeking a skilled Frontend Developer to join our team. The ideal candidate will have expertise in JavaScript frameworks and a strong understanding of responsive web design to build and maintain high-performance web applications.",
-  },
-  {
-    id: 3,
-    status: "OPEN",
-    experience: "Preferred Exp: 3 – 5 years",
-    title: "Product Manager",
-    company: "For ABC Solutions",
-    location: "New York",
-    remote: "Remote",
-    assigned_by: ["https://i.pravatar.cc/302"],
-    ctc: "12%",
-    description:
-      "As a Product Manager at ABC Solutions, you will drive the product roadmap and collaborate with cross-functional teams to ensure successful product launches. Strong communication and project management skills are essential.",
-  },
-  {
-    id: 4,
-    status: "OPEN",
-    experience: "Preferred Exp: 1 – 3 years",
-    title: "Graphic Designer",
-    company: "For Creative Agency",
-    location: "Texas",
-    remote: "In-office",
-    assigned_by: ["https://i.pravatar.cc/304"],
-    ctc: "8%",
-    description:
-      "Creative Agency is hiring a Graphic Designer to work on a variety of branding, digital, and print design projects. You will collaborate with the creative team to develop visually compelling materials that meet client goals.",
-  },
-  {
-    id: 5,
-    status: "OPEN",
-    experience: "Preferred Exp: 2 – 4 years",
-    title: "Backend Developer",
-    company: "For Tech Corp",
-    location: "Florida",
-    remote: "Remote",
-    assigned_by: ["https://i.pravatar.cc/306"],
-    ctc: "20%",
-    description:
-      "Tech Corp is looking for a Backend Developer to design and implement server-side logic, database systems, and APIs. You'll play a key role in optimizing the performance of our backend infrastructure.",
-  },
-  {
-    id: 6,
-    status: "CLOSED",
-    experience: "Preferred Exp: 4 – 6 years",
-    title: "Data Scientist",
-    company: "For DataLabs",
-    location: "Illinois",
-    remote: "Hybrid",
-    assigned_by: ["https://i.pravatar.cc/308"],
-    ctc: "18%",
-    description:
-      "DataLabs is seeking a Data Scientist to analyze complex datasets and provide actionable insights. You’ll work closely with product and engineering teams to create predictive models and improve business outcomes.",
-  },
-];
-
-const CardSection = ({ data }: { data: jobPost[] }) => {
+const CardSection = ({
+  data,
+  setFilterBy,
+  setSortBy,
+  setSearch,
+}: {
+  data: jobPost[];
+  setFilterBy: React.Dispatch<React.SetStateAction<string>>;
+  setSortBy: React.Dispatch<React.SetStateAction<string>>;
+  setSearch: React.Dispatch<React.SetStateAction<string>>;
+}) => {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState<string>("");
   const [active, setActive] = useState("0");
   const [listType, setListType] = useState("list");
 
-  const sortBy = [
+  const sortOptions = [
     { value: "a-z", label: "A-Z" },
     { value: "z-a", label: "Z-A" },
     { value: "newest", label: "Newest First" },
     { value: "oldest", label: "Oldest First" },
     { value: "last_updated", label: "Last Updated" },
   ];
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+  };
+
+  const handleSortChange = (val: string) => {
+    setValue(val);
+    setSortBy(val);
+  };
 
   return (
     <>
@@ -190,7 +143,10 @@ const CardSection = ({ data }: { data: jobPost[] }) => {
               className={`cursor-pointer flex items-center gap-2 ${
                 active === String(idx) ? "toggle-active" : ""
               }`}
-              onClick={() => setActive(String(idx))}
+              onClick={() => {
+                setActive(String(idx));
+                setFilterBy(String(idx));
+              }}
             >
               {idx === 0 && <Menu className="h-4 w-4" />}
               <p className="text-[#475569] text-sm flex items-center gap-1">
@@ -205,15 +161,15 @@ const CardSection = ({ data }: { data: jobPost[] }) => {
           <Input
             type="text"
             placeholder="Search"
-            className="w-[200px] placeholder:text-[13px] px-4 py-5"
-            onChange={(e) => console.log(e.target.value)} // Placeholder for search logic
+            className="w-[200px] placeholder:text-[12px] px-4 py-5"
+            onChange={handleSearch}
           />
           <SortBy
             open={open}
             setOpen={setOpen}
             value={value}
-            setValue={setValue}
-            sortBy={sortBy}
+            setValue={(val) => handleSortChange(val as string)}
+            sortBy={sortOptions}
           />
         </div>
       </div>
@@ -236,62 +192,20 @@ const CardSection = ({ data }: { data: jobPost[] }) => {
           </Button>
         </div>
       </div>
-      {listType == "list" ? (
-        <ClientTable data={data} />
+      {data.length > 0 ? (
+        listType === "list" ? (
+          <ClientTable data={data} />
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 cursor-pointer gap-4 pt-3 pb-10">
+            <JobCardSection data={data} />
+          </div>
+        )
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 cursor-pointer gap-4 pt-3 pb-10">
-          <JobCardSection data={cardData} />
-        </div>
+        <NoData />
       )}
     </>
   );
 };
-
-const SortBy = ({
-  open,
-  setOpen,
-  value,
-  setValue,
-  sortBy,
-}: {
-  open: boolean;
-  setOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  value: string;
-  setValue: React.Dispatch<React.SetStateAction<string>>;
-  sortBy: { value: string; label: string }[];
-}) => (
-  <Popover open={open} onOpenChange={setOpen}>
-    <PopoverTrigger asChild>
-      <Button variant="outline" className="w-auto justify-between">
-        {value ? sortBy.find((item) => item.value === value)?.label : "Sort By"}
-        <ChevronsUpDown className="opacity-50" />
-      </Button>
-    </PopoverTrigger>
-    <PopoverContent className="w-auto p-0">
-      <Command>
-        <CommandList>
-          <CommandGroup>
-            {sortBy.map((item) => (
-              <CommandItem
-                key={item.value}
-                onSelect={() =>
-                  setValue(item.value === value ? "" : item.value)
-                }
-              >
-                {item.label}
-                <Check
-                  className={`ml-auto ${
-                    value === item.value ? "opacity-100" : "opacity-0"
-                  }`}
-                />
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        </CommandList>
-      </Command>
-    </PopoverContent>
-  </Popover>
-);
 
 const ClientTable = ({ data }: { data: jobPost[] }) => (
   <div className="overflow-x-auto rounded-lg my-3">
@@ -314,19 +228,21 @@ const ClientTable = ({ data }: { data: jobPost[] }) => (
             <TableCell className={cellClass}>{jopPost.jobTitle}</TableCell>
             <TableCell className={cellClass}>{jopPost.positions}</TableCell>
             <TableCell className={cellClass}>{jopPost.experience}</TableCell>
-            <TableCell className={cellClass}>{jopPost.jobType}</TableCell>
+            <TableCell className={cellClass}>
+              {ucFirst(jopPost.jobType)}
+            </TableCell>
             <TableCell className={cellClass}>{jopPost.location}</TableCell>
             <TableCell className={cellClass}>
               <Badge
                 className={
-                  jopPost.status === "Open"
+                  jopPost.status === "open"
                     ? "bg-green-400"
-                    : jopPost.status === "Close"
+                    : jopPost.status === "closed"
                     ? "bg-red-400"
                     : "bg-orange-400"
                 }
               >
-                {jopPost.status}
+                {ucFirst(jopPost.status)}
               </Badge>
             </TableCell>
           </TableRow>
@@ -336,7 +252,7 @@ const ClientTable = ({ data }: { data: jobPost[] }) => (
   </div>
 );
 
-const JobCardSection = ({ data }: { data: typeof cardData }) => {
+const JobCardSection = ({ data }: { data: jobPost[] }) => {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [clickedIndex, setClickedIndex] = useState<number | null>(null);
 
@@ -367,18 +283,22 @@ const JobCardSection = ({ data }: { data: typeof cardData }) => {
             <div className="flex justify-between items-start mb-2">
               <span
                 className={`text-[10px] font-semibold px-3 py-1 rounded-md ${
-                  card.status === "OPEN"
+                  card.status === "open"
                     ? "bg-green-100 text-green-600"
-                    : "bg-red-100 text-red-600"
+                    : card.status === "closed"
+                    ? "bg-red-100 text-red-600"
+                    : "bg-orange-100 text-orange-600"
                 }`}
               >
-                {card.status}
+                {ucFirst(card.status)}
               </span>
               <span
                 className={`${
-                  card.status === "OPEN"
-                    ? "bg-green-50 text-green-600"
-                    : "bg-red-100 text-red-600"
+                  card.status === "open"
+                    ? "bg-green-100 text-green-600"
+                    : card.status === "closed"
+                    ? "bg-red-100 text-red-600"
+                    : "bg-orange-100 text-orange-600"
                 } text-xs font-[500] px-3 py-1 rounded-md`}
               >
                 {card.experience}
@@ -387,42 +307,30 @@ const JobCardSection = ({ data }: { data: typeof cardData }) => {
 
             <div className="mb-1">
               <h2 className="mt-4 text-[15px] font-bold text-[#1E293B]">
-                {card.title}
+                {card.jobTitle}
               </h2>
-              <p className="mt-1 text-[12px] text-[#1E293B]">{card.company}</p>
+              <p className="mt-1 text-[12px] text-[#1E293B]">
+                {card.companyName}
+              </p>
             </div>
 
             <div className="flex justify-between items-center text-sm text-gray-600 my-4">
               <div className="flex items-center gap-1">
                 <MapPin className="w-4 h-4" />
-                <span>{card.location}</span>
+                <span className="text-[11px]">{card.location}</span>
               </div>
-              <span className="text-[12px] font-medium">{card.remote}</span>
+              <span className="text-[11px] font-medium">
+                {ucFirst(card.jobType)}
+              </span>
             </div>
 
             <div className="flex justify-between items-center mt-4">
               <div>
                 <p className="text-xs text-gray-500 mb-1">Assigned By</p>
                 <div className="flex -space-x-2">
-                  {card.assigned_by.map((recruiter, recruiterIndex) => (
-                    <div
-                      key={recruiterIndex}
-                      className="relative group"
-                      onMouseEnter={() => handleHover(recruiterIndex)}
-                      onMouseLeave={() => handleHover(null)}
-                    >
-                      <img
-                        className="w-8 h-8 rounded-full border-2 border-white"
-                        src={recruiter}
-                        alt={`Manager ${recruiterIndex + 1}`}
-                      />
-                      {isHovered && (
-                        <div className="absolute bottom-0 left-0 w-full bg-black text-white text-xs py-1 px-2 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                          Manager {recruiterIndex + 1}
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                  <p className="text-gray-500 text-[10px]">
+                    {card.assigned_by}
+                  </p>
                 </div>
               </div>
             </div>
@@ -438,29 +346,5 @@ const JobCardSection = ({ data }: { data: typeof cardData }) => {
     </>
   );
 };
-
-const PaginationSection = () => (
-  <Pagination>
-    <PaginationContent>
-      <PaginationItem>
-        <PaginationPrevious href="#" />
-      </PaginationItem>
-      <PaginationItem>
-        <PaginationLink href="#">1</PaginationLink>
-      </PaginationItem>
-      <PaginationItem>
-        <PaginationLink href="#" isActive>
-          2
-        </PaginationLink>
-      </PaginationItem>
-      <PaginationItem>
-        <PaginationLink href="#">3</PaginationLink>
-      </PaginationItem>
-      <PaginationItem>
-        <PaginationNext href="#" />
-      </PaginationItem>
-    </PaginationContent>
-  </Pagination>
-);
 
 export default AssignedPositions;

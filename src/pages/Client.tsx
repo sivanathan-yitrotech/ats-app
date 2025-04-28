@@ -29,6 +29,7 @@ const tableHeaderClass = "text-[#0044A3] font-semibold text-sm py-3 px-6";
 const cellClass = "text-sm font-medium text-gray-700 py-3 px-6";
 
 interface Client {
+  id: string;
   clientName: string;
   companyName: string;
   contactNumber: string;
@@ -139,9 +140,7 @@ const CardSection = ({
   setFilterBy,
   setSortBy,
   setSearch,
-  formData,
   setFormData,
-  errors,
   setErrors,
   setDeleteId,
 }: {
@@ -151,9 +150,7 @@ const CardSection = ({
   setFilterBy: React.Dispatch<React.SetStateAction<string>>;
   setSortBy: React.Dispatch<React.SetStateAction<string>>;
   setSearch: React.Dispatch<React.SetStateAction<string>>;
-  formData: React.Dispatch<React.SetStateAction<FormData>>;
   setFormData: React.Dispatch<React.SetStateAction<FormData>>;
-  errors: React.Dispatch<React.SetStateAction<object>>;
   setErrors: React.Dispatch<React.SetStateAction<object>>;
   setDeleteId: React.Dispatch<React.SetStateAction<string>>;
 }) => {
@@ -323,7 +320,7 @@ const ClientTable = ({
                     variant="secondary"
                     className="cursor-pointer"
                     size="icon"
-                    onClick={() => setIsDeleteOpen(true)}
+                    onClick={() => deleteData(client.id)}
                   >
                     <Trash2 className="h-5 w-5 cursor-pointer hover:text-red-500" />
                   </Button>
