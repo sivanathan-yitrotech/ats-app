@@ -12,8 +12,6 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import axios from "axios";
-import { Toaster } from "@/components/ui/sonner";
-import { toast } from "sonner";
 import PaginationSection from "@/components/ui/page";
 import NoData from "@/components/ui/nodata";
 import SortBy from "@/components/ui/sortby";
@@ -90,7 +88,7 @@ const AssignedPositions = () => {
         page={page}
         setPage={setPage}
       />
-      <Toaster />
+      
     </div>
   );
 };
