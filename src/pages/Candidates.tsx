@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, FilePlus, Pencil, Trash2 } from "lucide-react";
+import { Plus, FilePlus, Pencil, Trash2, FileMinus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -40,10 +40,31 @@ interface Candidate {
   contactNumber: string;
   email: string;
   jobRole: string;
+  is_assigned: string;
+}
+
+interface Postings {
+  id: string;
+  title: string;
+}
+
+interface AssignData {
+  id: string;
+  candidateName: string;
+  email: string;
+  mobileNumber: string;
+  postings: Postings[];
 }
 
 const Candidates = () => {
   const [clients, setClients] = useState<Candidate[]>([]);
+  const [assignData, setAssignData] = useState<AssignData>({
+    id: "",
+    candidateName: "",
+    email: "",
+    mobileNumber: "",
+    postings: [],
+  });
   const [isOpen, setIsOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [assignOpen, setAssignOpen] = useState(false);
@@ -98,6 +119,7 @@ const Candidates = () => {
   }
 
   const [formData, setFormData] = useState<FormData>({
+    id: "",
     candidateName: "",
     jobRole: "",
     email: "",
@@ -137,6 +159,8 @@ const Candidates = () => {
         setErrors={setErrors}
         setDeleteId={setDeleteId}
         setAssignOpen={setAssignOpen}
+        setAssignData={setAssignData}
+        loadCandidates={loadCandidates}
       />
       <PaginationSection
         total={total}
@@ -153,7 +177,13 @@ const Candidates = () => {
         errors={errors}
         setErrors={setErrors}
       />
-      <AssignDialog assignOpen={assignOpen} setAssignOpen={setAssignOpen} />
+      <AssignDialog
+        assignOpen={assignOpen}
+        setAssignOpen={setAssignOpen}
+        assignData={assignData}
+        setAssignData={setAssignData}
+        loadCandidates={loadCandidates}
+      />
       <DeleteDialog
         isDeleteOpen={isDeleteOpen}
         setIsDeleteOpen={setIsDeleteOpen}
@@ -175,6 +205,8 @@ const CardSection = ({
   setErrors,
   setDeleteId,
   setAssignOpen,
+  setAssignData,
+  loadCandidates,
 }: {
   data: Candidate[];
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -185,6 +217,8 @@ const CardSection = ({
   setErrors: React.Dispatch<React.SetStateAction<object>>;
   setDeleteId: React.Dispatch<React.SetStateAction<string>>;
   setAssignOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  setAssignData: React.Dispatch<React.SetStateAction<AssignData>>;
+  loadCandidates: () => void;
 }) => {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState<string>("");
@@ -244,6 +278,8 @@ const CardSection = ({
           setDeleteId={setDeleteId}
           setFormData={setFormData}
           setAssignOpen={setAssignOpen}
+          setAssignData={setAssignData}
+          loadCandidates={loadCandidates}
         />
       ) : (
         <NoData />
@@ -259,6 +295,8 @@ const CandidateTable = ({
   setDeleteId,
   setFormData,
   setAssignOpen,
+  setAssignData,
+  loadCandidates,
 }: {
   data: Candidate[];
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -266,6 +304,8 @@ const CandidateTable = ({
   setDeleteId: React.Dispatch<React.SetStateAction<string>>;
   setFormData: React.Dispatch<React.SetStateAction<FormData>>;
   setAssignOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  setAssignData: React.Dispatch<React.SetStateAction<AssignData>>;
+  loadCandidates: () => void;
 }) => {
   const editData = ({ id }: { id: string }) => {
     axios
@@ -281,11 +321,59 @@ const CandidateTable = ({
         setFormData({
           id: data.id,
           candidateName: data.candidateName,
-          contactNumber: data.contactNumber,
-          email: data.email,
           jobRole: data.jobRole,
+          email: data.email,
+          mobileNumber: data.contactNumber,
+          years: data.exp_years,
+          months: data.exp_months,
+          country: data.loc_country,
+          city: data.loc_city,
+          joiningDate: data.joinDate,
+          ctc_symble: data.exp_ctc_symble,
+          ctc: data.exp_ctc_value,
+          skills: data.skills,
+          resume: null,
         });
         setIsOpen(true);
+      })
+      .catch((error) => {
+        console.error("API Error:", error);
+      });
+  };
+
+  const assignPosting = ({ id }: { id: string }) => {
+    axios
+      .get(`http://127.0.0.1:8000/get-data`, {
+        params: {
+          type: "get-assign-details",
+          id: id,
+        },
+      })
+      .then((response) => {
+        const data = response.data.data;
+        setAssignData({
+          id: data.id,
+          candidateName: data.candidateName,
+          email: data.email,
+          mobileNumber: data.mobileNumber,
+          postings: data.postings,
+        });
+        setAssignOpen(true);
+      })
+      .catch((error) => {
+        console.error("API Error:", error);
+      });
+  };
+
+  const unAssignPosting = ({ id }: { id: string }) => {
+    axios
+      .post(`http://127.0.0.1:8000/post-data`, {
+        type: "un-assign",
+        id: id,
+      })
+      .then((response) => {
+        toast.success("Position un-assigned successfully");
+        loadCandidates();
       })
       .catch((error) => {
         console.error("API Error:", error);
@@ -337,14 +425,25 @@ const CandidateTable = ({
                   >
                     <Trash2 className="h-5 w-5 cursor-pointer hover:text-red-500" />
                   </Button>
-                  <Button
-                    variant="secondary"
-                    className="cursor-pointer"
-                    size="icon"
-                    onClick={() => setAssignOpen(true)}
-                  >
-                    <FilePlus className="h-5 w-5 cursor-pointer hover:text-blue-500" />
-                  </Button>
+                  {!candidate.is_assigned ? (
+                    <Button
+                      variant="secondary"
+                      className="cursor-pointer"
+                      size="icon"
+                      onClick={() => assignPosting(candidate.id)}
+                    >
+                      <FilePlus className="h-5 w-5 cursor-pointer text-blue-500 hover:text-blue-500" />
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="secondary"
+                      className="cursor-pointer"
+                      size="icon"
+                      onClick={() => unAssignPosting(candidate.id)}
+                    >
+                      <FileMinus className="h-5 w-5 cursor-pointer text-red-500 hover:text-blue-500" />
+                    </Button>
+                  )}
                 </div>
               </TableCell>
             </TableRow>
@@ -358,50 +457,43 @@ const CandidateTable = ({
 const AddCandidateDialog = ({
   isOpen,
   setIsOpen,
-  loadClients,
+  loadCandidates,
   formData,
   setFormData,
   errors,
   setErrors,
-}: {
-  isOpen: boolean;
-  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  loadClients: () => void;
-  formData: any;
-  setFormData: React.Dispatch<React.SetStateAction<any>>;
-  errors: any;
-  setErrors: React.Dispatch<React.SetStateAction<any>>;
-}) => {
+}: AddCandidateDialogProps) => {
   const [submitting, setSubmitting] = useState(false);
 
-  const validateForm = () => {
-    const newErrors: any = {};
+  const validateForm = (): boolean => {
+    const newErrors: CandidateErrors = {};
 
-    if (!formData.candidateName)
+    const isEmpty = (value: any) => !value || value.toString().trim() === "";
+
+    if (isEmpty(formData.candidateName))
       newErrors.candidateName = "Candidate name is required";
-    if (!formData.jobRole) newErrors.jobRole = "Job role is required";
-
-    if (!formData.email) {
-      newErrors.email = "Email is required";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    if (isEmpty(formData.jobRole)) newErrors.jobRole = "Job role is required";
+    if (isEmpty(formData.email)) newErrors.email = "Email is required";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
       newErrors.email = "Invalid email format";
-    }
 
-    if (!formData.contactNumber) {
-      newErrors.contactNumber = "Mobile number is required";
-    } else if (!/^\d{10,15}$/.test(formData.contactNumber)) {
-      newErrors.contactNumber = "Invalid mobile number";
-    }
+    if (isEmpty(formData.mobileNumber))
+      newErrors.mobileNumber = "Mobile number is required";
+    else if (!/^\d{10,15}$/.test(formData.mobileNumber))
+      newErrors.mobileNumber = "Invalid mobile number";
 
-    if (!formData.years) newErrors.years = "Experience (years) is required";
-    if (!formData.months) newErrors.months = "Experience (months) is required";
-    if (!formData.country) newErrors.country = "Country is required";
-    if (!formData.city) newErrors.city = "City is required";
-    if (!formData.joiningDate)
+    if (isEmpty(formData.years))
+      newErrors.years = "Experience (years) is required";
+    if (isEmpty(formData.months))
+      newErrors.months = "Experience (months) is required";
+    if (isEmpty(formData.country)) newErrors.country = "Country is required";
+    if (isEmpty(formData.city)) newErrors.city = "City is required";
+    if (isEmpty(formData.joiningDate))
       newErrors.joiningDate = "Joining date is required";
-    if (!formData.ctc) newErrors.ctc = "Expected CTC is required";
-    if (!formData.skills) newErrors.skills = "Skills are required";
-    if (!formData.resume) newErrors.resume = "Resume file is required";
+    if (isEmpty(formData.ctc)) newErrors.ctc = "Expected CTC is required";
+    if (isEmpty(formData.skills)) newErrors.skills = "Skills are required";
+    if (!formData.resume && !formData.id)
+      newErrors.resume = "Resume file is required";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -413,11 +505,10 @@ const AddCandidateDialog = ({
     >
   ) => {
     const { name, value, type, files } = e.target;
-
     if (type === "file") {
-      setFormData((prev: any) => ({ ...prev, [name]: files?.[0] || null }));
+      setFormData((prev) => ({ ...prev, [name]: files?.[0] ?? null }));
     } else {
-      setFormData((prev: any) => ({ ...prev, [name]: value }));
+      setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
 
@@ -426,30 +517,27 @@ const AddCandidateDialog = ({
 
     setSubmitting(true);
     try {
-      const data = new FormData();
+      const payload = new FormData();
       Object.entries(formData).forEach(([key, value]) => {
         if (value !== null && value !== undefined) {
-          data.append(key, value);
+          payload.append(key, value);
         }
       });
-      data.append("type", "add-candidate");
+      payload.append("type", "add-candidate");
 
-      const response = await axios.post(
-        "http://127.0.0.1:8000/post-data",
-        data,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+      const res = await axios.post("http://127.0.0.1:8000/post-data", payload, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
 
-      if (response.status === 200) {
+      if (res.status === 200) {
+        toast.success(
+          `Candidate ${formData.id ? "updated" : "added"} successfully`
+        );
         setFormData({
           candidateName: "",
           jobRole: "",
           email: "",
-          contactNumber: "",
+          mobileNumber: "",
           years: "",
           months: "",
           country: "",
@@ -458,14 +546,15 @@ const AddCandidateDialog = ({
           ctc: "",
           skills: "",
           resume: null,
+          ctc_symble: "1",
         });
         setErrors({});
         setIsOpen(false);
-        toast.success("Candidate added successfully");
-        loadClients();
+        loadCandidates();
       }
-    } catch (error) {
-      console.error("API Error:", error);
+    } catch (err) {
+      console.error("Submit Error:", err);
+      toast.error("Failed to add candidate.");
     } finally {
       setSubmitting(false);
     }
@@ -480,6 +569,7 @@ const AddCandidateDialog = ({
           <DialogTitle className="my-4 text-xl text-[#0044A3] font-bold text-center">
             Add Candidate
           </DialogTitle>
+
           <div className="mt-4 grid grid-cols-2 gap-x-8 gap-y-5">
             <InputField
               label="Candidate Name"
@@ -487,7 +577,6 @@ const AddCandidateDialog = ({
               value={formData.candidateName}
               onChange={handleChange}
               error={errors.candidateName}
-              max="250"
               placeholder="Enter the Candidate Name"
             />
             <InputField
@@ -496,7 +585,6 @@ const AddCandidateDialog = ({
               value={formData.jobRole}
               onChange={handleChange}
               error={errors.jobRole}
-              max="250"
               placeholder="Enter the Job Role"
             />
             <InputField
@@ -506,7 +594,6 @@ const AddCandidateDialog = ({
               value={formData.email}
               onChange={handleChange}
               error={errors.email}
-              max="250"
               placeholder="Enter the Email"
             />
             <InputField
@@ -515,20 +602,30 @@ const AddCandidateDialog = ({
               value={formData.mobileNumber}
               onChange={handleChange}
               error={errors.mobileNumber}
-              max="250"
               placeholder="Enter the Mobile Number"
             />
+
+            {/* Experience */}
             <div className="flex items-center gap-4">
               <Label className="text-[#1E293B] w-[30%]">Experience</Label>
               <div className="w-[34%] flex flex-col gap-0.5">
-                <Select name="years">
-                  <SelectTrigger className="placeholder:text-[13px] px-4 py-5">
+                <Select
+                  value={formData.years}
+                  onValueChange={(val) =>
+                    handleChange({
+                      target: { name: "years", value: val },
+                    } as any)
+                  }
+                >
+                  <SelectTrigger className="placeholder:text-[13px] px-4 py-5 w-[100%]">
                     <SelectValue placeholder="Select Years" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1">1</SelectItem>
-                    <SelectItem value="2">2</SelectItem>
-                    <SelectItem value="3">3</SelectItem>
+                    {[...Array(30)].map((_, i) => (
+                      <SelectItem key={i} value={(i + 1).toString()}>
+                        {i + 1}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 {errors.years && (
@@ -538,17 +635,23 @@ const AddCandidateDialog = ({
                 )}
               </div>
               <div className="w-[34%] flex flex-col gap-0.5">
-                <Select name="months">
-                  <SelectTrigger className="placeholder:text-[13px] px-4 py-5">
+                <Select
+                  value={formData.months}
+                  onValueChange={(val) =>
+                    handleChange({
+                      target: { name: "months", value: val },
+                    } as any)
+                  }
+                >
+                  <SelectTrigger className="placeholder:text-[13px] px-4 py-5 w-[100%]">
                     <SelectValue placeholder="Select Months" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1">1</SelectItem>
-                    <SelectItem value="2">2</SelectItem>
-                    <SelectItem value="3">3</SelectItem>
-                    <SelectItem value="4">4</SelectItem>
-                    <SelectItem value="5">5</SelectItem>
-                    <SelectItem value="6">6</SelectItem>
+                    {[...Array(12)].map((_, i) => (
+                      <SelectItem key={i} value={(i + 1).toString()}>
+                        {i + 1}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 {errors.months && (
@@ -558,81 +661,160 @@ const AddCandidateDialog = ({
                 )}
               </div>
             </div>
+
+            {/* Location */}
             <div className="flex items-center gap-4">
               <Label className="text-[#1E293B] w-[30%]">Location</Label>
-              <Select name="Country">
-                <SelectTrigger className="w-[34%] placeholder:text-[13px] px-4 py-5">
-                  <SelectValue placeholder="Select Country" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">India</SelectItem>
-                  <SelectItem value="2">America</SelectItem>
-                  <SelectItem value="3">Canada</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select name="months">
-                <SelectTrigger className="w-[34%] placeholder:text-[13px] px-4 py-5">
-                  <SelectValue placeholder="Select City" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">New Delhi</SelectItem>
-                  <SelectItem value="2">Mumbai</SelectItem>
-                  <SelectItem value="3">New York City</SelectItem>
-                  <SelectItem value="4">Los Angeles</SelectItem>
-                  <SelectItem value="5">Toronto</SelectItem>
-                  <SelectItem value="6">Vancouver</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="w-[34%] flex flex-col gap-0.5">
+                <Select
+                  value={formData.country}
+                  onValueChange={(val) =>
+                    handleChange({
+                      target: { name: "country", value: val },
+                    } as any)
+                  }
+                >
+                  <SelectTrigger className="placeholder:text-[13px] px-4 py-5 w-[100%]">
+                    <SelectValue placeholder="Select Country" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">India</SelectItem>
+                    <SelectItem value="2">USA</SelectItem>
+                    <SelectItem value="3">Canada</SelectItem>
+                  </SelectContent>
+                </Select>
+                {errors.country && (
+                  <p className="text-red-500 text-xs mt-1 ml-2">
+                    {errors.country}
+                  </p>
+                )}
+              </div>
+              <div className="w-[34%] flex flex-col gap-0.5">
+                <Select
+                  value={formData.city}
+                  onValueChange={(val) =>
+                    handleChange({
+                      target: { name: "city", value: val },
+                    } as any)
+                  }
+                >
+                  <SelectTrigger className="placeholder:text-[13px] px-4 py-5 w-[100%]">
+                    <SelectValue placeholder="Select City" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">New Delhi</SelectItem>
+                    <SelectItem value="2">Mumbai</SelectItem>
+                    <SelectItem value="3">New York City</SelectItem>
+                    <SelectItem value="4">Los Angeles</SelectItem>
+                    <SelectItem value="5">Toronto</SelectItem>
+                    <SelectItem value="6">Vancouver</SelectItem>
+                  </SelectContent>
+                </Select>
+                {errors.city && (
+                  <p className="text-red-500 text-xs mt-1 ml-2">
+                    {errors.city}
+                  </p>
+                )}
+              </div>
             </div>
+
+            {/* Joining Date */}
             <div className="flex items-center gap-4">
               <Label className="text-[#1E293B] w-[30%]">Joining Date</Label>
-              <Input
-                name="joiningDate"
-                type="date"
-                className="w-[70%] placeholder:text-[12px] px-4 py-5"
-              />
+              <div className="w-[70%] flex flex-col gap-0.5">
+                <Input
+                  name="joiningDate"
+                  type="date"
+                  value={formData.joiningDate}
+                  onChange={handleChange}
+                  className="w-full placeholder:text-[12px] px-4 py-5"
+                />
+                {errors.joiningDate && (
+                  <p className="text-red-500 text-xs mt-1 ml-2">
+                    {errors.joiningDate}
+                  </p>
+                )}
+              </div>
             </div>
+
+            {/* CTC */}
             <div className="flex items-center gap-4">
               <Label className="text-[#1E293B] w-[30%]">
                 Expected CTC/Year
               </Label>
-              <Select name="Country" defaultValue="1">
+              <Select
+                value={formData.ctc_symble}
+                defaultValue="$"
+                onValueChange={(val) =>
+                  handleChange({
+                    target: { name: "ctc_symble", value: val },
+                  } as any)
+                }
+              >
                 <SelectTrigger className="w-[15%] placeholder:text-[13px] px-4 py-5">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1">$</SelectItem>
-                  <SelectItem value="2">₹</SelectItem>
+                  <SelectItem value="₹">₹</SelectItem>
+                  <SelectItem value="$">$</SelectItem>
                 </SelectContent>
               </Select>
-              <Input
-                name="ctc"
-                type="number"
-                placeholder="Enter the Expected CTC"
-                className="w-[55%] placeholder:text-[12px] px-4 py-5"
-              />
+              <div className="w-[55%] flex flex-col gap-0.5">
+                <Input
+                  name="ctc"
+                  type="number"
+                  value={formData.ctc}
+                  onChange={handleChange}
+                  placeholder="Enter the Expected CTC"
+                  className="w-full placeholder:text-[12px] px-4 py-5"
+                />
+                {errors.ctc && (
+                  <p className="text-red-500 text-xs mt-1 ml-2">{errors.ctc}</p>
+                )}
+              </div>
             </div>
+
+            {/* Skills */}
             <div className="flex items-center gap-4">
               <Label className="text-[#1E293B] w-[30%]">Skills</Label>
-              <Input
-                name="skills"
-                type="text"
-                placeholder="Enter the Skills"
-                className="w-[70%] placeholder:text-[12px] px-4 py-5"
-                onChange={(e) => setSkills(e.target.value.split(","))} // Placeholder for skills logic
-              />
+              <div className="w-[70%] flex flex-col gap-0.5">
+                <Input
+                  name="skills"
+                  type="text"
+                  value={formData.skills}
+                  onChange={handleChange}
+                  placeholder="Enter the Skills"
+                  className="w-full placeholder:text-[12px] px-4 py-5"
+                />
+                {errors.skills && (
+                  <p className="text-red-500 text-xs mt-1 ml-2">
+                    {errors.skills}
+                  </p>
+                )}
+              </div>
             </div>
+
+            {/* Resume */}
             <div className="flex items-center gap-4">
               <Label className="text-[#1E293B] w-[30%]">Resume</Label>
-              <Input
-                name="resume"
-                type="file"
-                placeholder="Upload Resume"
-                className="w-[70%] placeholder:text-[12px]"
-              />
+              <div className="w-[70%] flex flex-col gap-0.5">
+                <Input
+                  name="resume"
+                  type="file"
+                  accept=".pdf,.doc,.docx"
+                  onChange={handleChange}
+                  className="placeholder:text-[12px]"
+                />
+                {errors.resume && (
+                  <p className="text-red-500 text-xs mt-1 ml-2">
+                    {errors.resume}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
 
+          {/* Buttons */}
           <div className="flex justify-center gap-6 my-6">
             <Button
               onClick={handleSubmit}
@@ -653,76 +835,136 @@ const AddCandidateDialog = ({
     </Dialog>
   );
 };
-
 const AssignDialog = ({
   assignOpen,
   setAssignOpen,
+  assignData,
+  setAssignData,
+  loadCandidates,
 }: {
   assignOpen: boolean;
   setAssignOpen: React.Dispatch<React.SetStateAction<boolean>>;
-}) => (
-  <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
-    <DialogContent>
-      <DialogHeader>
-        <DialogTitle className="my-4 text-xl text-[#0044A3] font-bold text-center">
-          Assign a Job Posting
-        </DialogTitle>
-        <div className="mt-4 flex flex-col gap-4">
-          <div className="flex items-center gap-4">
-            <Label className="w-[30%] text-[#1E293B] font-medium">
-              Candidate Name
-            </Label>
-            <span className="w-[70%] text-[#4B5563] text-sm">Albort Brade</span>
+  assignData: AssignData;
+  setAssignData: React.Dispatch<React.SetStateAction<AssignData>>;
+  loadCandidates: () => void;
+}) => {
+  const [postings, setPostings] = useState("");
+  const [postingsError, setPostingsError] = useState("");
+
+  const saveAssign = ({ id }: { id: string }) => {
+    if (!postings) {
+      setPostingsError("Select Job Posting");
+      return;
+    }
+
+    axios
+      .post(`http://127.0.0.1:8000/post-data`, {
+        type: "save-assign",
+        id: id,
+        postings: postings,
+      })
+      .then((response) => {
+        console.log(response);
+        toast.success("Position assigned successfully");
+        loadCandidates();
+        setAssignData({
+          id: "",
+          candidateName: "",
+          email: "",
+          mobileNumber: "",
+          postings: [],
+        });
+        setAssignOpen(false);
+      })
+      .catch((error) => {
+        console.error("API Error:", error);
+      });
+  };
+
+  return (
+    <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="my-4 text-xl text-[#0044A3] font-bold text-center">
+            Assign a Job Posting
+          </DialogTitle>
+          <div className="mt-4 flex flex-col gap-4">
+            <div className="flex items-center gap-4">
+              <Label className="w-[30%] text-[#1E293B] font-medium">
+                Candidate Name
+              </Label>
+              <span className="w-[70%] text-[#4B5563] text-sm">
+                {assignData.candidateName}
+              </span>
+            </div>
+
+            {/* Email/Mobile */}
+            <div className="flex items-center gap-4">
+              <Label className="w-[30%] text-[#1E293B] font-medium">
+                Email / Mobile
+              </Label>
+              <span className="w-[70%] text-[#4B5563] text-sm">
+                {assignData.email} / {assignData.mobileNumber}
+              </span>
+            </div>
+
+            {/* Job Postings */}
+            <div className="flex items-center gap-4">
+              <Label className="w-[30%] text-[#1E293B] font-medium">
+                Job Postings
+              </Label>
+              <div className="flex flex-col w-[70%]">
+                <Select
+                  onValueChange={(val) => {
+                    setPostings(val);
+                    setPostingsError("");
+                  }}
+                >
+                  <SelectTrigger className="w-full px-4 py-2 rounded-md border border-[#CBD5E1] focus:ring-2 focus:ring-blue-500">
+                    <SelectValue placeholder="Select Job Posting" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {assignData.postings && assignData.postings.length > 0 ? (
+                      assignData.postings.map((data) => (
+                        <SelectItem key={data.id} value={data.id}>
+                          {data.title}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <div className="text-gray-500 text-sm p-2">
+                        No postings available
+                      </div>
+                    )}
+                  </SelectContent>
+                </Select>
+                {postingsError && (
+                  <p className="text-red-500 text-xs mt-1 ml-2">
+                    {postingsError}
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* Email/Mobile */}
-          <div className="flex items-center gap-4">
-            <Label className="w-[30%] text-[#1E293B] font-medium">
-              Email / Mobile
-            </Label>
-            <span className="w-[70%] text-[#4B5563] text-sm">
-              albort.brade@gmail.com / 878687885
-            </span>
+          <div className="flex justify-center gap-6 my-6">
+            <Button
+              className="bg-[#0044A3] rounded-[3px] hover:bg-blue-950"
+              onClick={() => saveAssign({ id: assignData.id })}
+            >
+              Save
+            </Button>
+            <Button
+              onClick={() => setAssignOpen(false)}
+              className="bg-white rounded-[3px] hover:bg-neutral-300 border border-[#64748B] text-[#64748B]"
+            >
+              Cancel
+            </Button>
           </div>
-
-          {/* Job Postings */}
-          <div className="flex items-center gap-4">
-            <Label className="w-[40%] text-[#1E293B] font-medium">
-              Job Postings
-            </Label>
-            <Select name="months" defaultValue="1">
-              <SelectTrigger className="w-full px-4 py-2 rounded-md border border-[#CBD5E1] focus:ring-2 focus:ring-blue-500">
-                <SelectValue placeholder="Select Job Posting" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">PHP Developer</SelectItem>
-                <SelectItem value="2">React Developer</SelectItem>
-                <SelectItem value="3">Python Developer</SelectItem>
-                <SelectItem value="4">Fullstack Developer</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <div className="flex justify-center gap-6 my-6">
-          <Button
-            className="bg-[#0044A3] rounded-[3px] hover:bg-blue-950"
-            onClick={() => setAssignOpen(false)}
-          >
-            Save
-          </Button>
-          <Button
-            onClick={() => setAssignOpen(false)}
-            className="bg-white rounded-[3px] hover:bg-neutral-300 border border-[#64748B] text-[#64748B]"
-          >
-            Cancel
-          </Button>
-        </div>
-      </DialogHeader>
-    </DialogContent>
-  </Dialog>
-);
-
+        </DialogHeader>
+      </DialogContent>
+    </Dialog>
+  );
+};
 const DeleteDialog = ({
   isDeleteOpen,
   setIsDeleteOpen,
