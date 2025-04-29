@@ -62,8 +62,8 @@ const Users = () => {
         },
       })
       .then((response) => {
-        setUsers(response.data.data);
-        setTotal(75);
+        setUsers(response.data.data.list);
+        setTotal(response.data.data.total);
       })
       .catch((error) => {
         console.error("API Error:", error);

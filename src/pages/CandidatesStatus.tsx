@@ -22,12 +22,12 @@ import PaginationSection from "@/components/ui/page";
 import NoData from "@/components/ui/nodata";
 import SortBy from "@/components/ui/sortby";
 import { ucFirst } from "../../utils/common";
-import InputField from "@/components/ui/inputfield";
 import axios from "axios";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 
 type Candidate = {
+  id: string; // Added id property
   name: string;
   mobile: string;
   email: string;
@@ -58,6 +58,21 @@ const CandidateStatus = () => {
   const limit = 20;
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [editId, setEditId] = useState("");
+
+  const [formData, setFormData] = useState({
+    offeredDate: "",
+    onboardDate: "",
+    interviewDate: "",
+    interviewTime: "",
+    interviewers: "",
+    mode: "",
+    remarks: "",
+    communication: 0,
+    technical: 0,
+    overall: 0,
+    isFeeded: false,
+  });
 
   const getOptions = () => {
     axios
@@ -105,6 +120,8 @@ const CandidateStatus = () => {
       });
   };
 
+  const [status, setStatus] = useState("0");
+  const [getData, setData] = useState([]);
   useEffect(() => {
     getOptions();
   }, []);
@@ -131,8 +148,24 @@ const CandidateStatus = () => {
         setFilterJob={setFilterJob}
         setFilterRecruiter={setFilterRecruiter}
         options={options}
+        setStatus={setStatus}
+        setEditId={setEditId}
+        status={status}
+        setData={setData}
+        formData={formData}
+        setFormData={setFormData}
       />
-      <UpdateStatusDialog isOpen={isOpen} setIsOpen={setIsOpen} />
+      <UpdateStatusDialog
+        isOpen={isOpen}
+        setIsOpen={setIsOpen}
+        loadCandidates={loadCandidates}
+        editId={editId}
+        setStatus={setStatus}
+        getData={getData}
+        status={status}
+        formData={formData}
+        setFormData={setFormData}
+      />
       <PaginationSection
         total={total}
         limit={limit}
@@ -154,6 +187,11 @@ const CardSection = ({
   setFilterJob,
   setFilterRecruiter,
   options,
+  setEditId,
+  setStatus,
+  setData,
+  formData,
+  setFormData,
 }: {
   data: any;
   isOpen: boolean;
@@ -168,10 +206,15 @@ const CardSection = ({
     jobs: { id: string; name: string }[];
     recruiters: { id: string; name: string }[];
   };
+  setEditId: React.Dispatch<React.SetStateAction<string>>;
+  setStatus: React.Dispatch<React.SetStateAction<string>>;
+  setData: any;
+  status: string;
+  formData: any;
+  setFormData: any;
 }) => {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState("");
-  const [active, setActive] = useState("0");
 
   const sortOptions = [
     { value: "a-z", label: "A-Z" },
@@ -310,6 +353,11 @@ const CardSection = ({
                 type={status}
                 isOpen={isOpen}
                 setIsOpen={setIsOpen}
+                setEditId={setEditId}
+                setStatus={setStatus}
+                setData={setData}
+                formData={formData}
+                setFormData={setFormData}
               />
             </div>
           </div>
@@ -349,12 +397,51 @@ const CandidateCard = ({
   type,
   isOpen,
   setIsOpen,
+  setData,
+  setStatus,
+  setEditId,
+  formData,
+  setFormData,
 }: {
   data: Candidate[];
   type: string;
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  setData: any;
+  setStatus: React.Dispatch<React.SetStateAction<string>>;
+  setEditId: React.Dispatch<React.SetStateAction<string>>;
+  formData: any;
+  setFormData: any;
 }) => {
+  const editData = (id: string) => {
+    axios
+      .get("http://127.0.0.1:8000/get-data", {
+        params: { type: "edit-status-data", id: id },
+      })
+      .then((response) => {
+        const resData = response.data.data;
+        setFormData({
+          offeredDate: resData.offeredDate,
+          onboardDate: resData.onboardDate,
+          interviewDate: resData.interviewDate,
+          interviewTime: resData.interviewTime,
+          interviewers: resData.interviewers,
+          mode: resData.mode,
+          remarks: resData.remarks,
+          communication: resData.communication,
+          technical: resData.technical,
+          overall: resData.overall,
+          isFeeded: resData.isFeeded,
+        });
+        setData(resData);
+        setStatus(resData.status);
+        setIsOpen(true);
+      })
+      .catch((error) => {
+        console.error("API Error:", error);
+      });
+  };
+
   return (
     <>
       {data?.length > 0 ? (
@@ -367,7 +454,9 @@ const CandidateCard = ({
               <div className="flex items-center justify-between relative">
                 <h2 className="text-[13px] font-bold">{card.name}</h2>
                 <Edit2
-                  onClick={() => setIsOpen(true)}
+                  onClick={() => {
+                    editData(card.id);
+                  }}
                   size={12}
                   className="absolute right-2 top-2 text-gray-500 hover:text-blue-500 cursor-pointer"
                 />
@@ -429,20 +518,164 @@ const CandidateCard = ({
     </>
   );
 };
-
-const UpdateStatusDialog = ({
-  isOpen,
-  setIsOpen,
-}: {
+interface UpdateStatusDialogProps {
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  loadCandidates: () => void;
+  editId: string;
+  setStatus: React.Dispatch<React.SetStateAction<string>>;
+  getData: any;
+  status: string;
+  formData: {
+    offeredDate?: string;
+    onboardDate?: string;
+    interviewDate?: string;
+    interviewTime?: string;
+    interviewers?: string;
+    mode?: string;
+    remarks?: string;
+    communication?: number;
+    technical?: number;
+    overall?: number;
+    isFeeded?: boolean;
+  };
+  setFormData: React.Dispatch<React.SetStateAction<any>>;
+}
+
+const UpdateStatusDialog: React.FC<UpdateStatusDialogProps> = ({
+  isOpen,
+  setIsOpen,
+  loadCandidates,
+  editId,
+  setStatus,
+  getData,
+  status,
+  formData,
+  setFormData,
 }) => {
-  const [status, setStatus] = useState("0");
-  const [isFeeded, setIsFeeded] = useState(false);
   const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
-  const handleSubmit = ({ isFeeded }: { isFeeded: boolean }) => {
-    console.log(isFeeded);
-    setIsFeeded(true);
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [submitting, setSubmitting] = useState(false);
+
+  const validateForm = () => {
+    const newErrors: { [key: string]: string } = {};
+
+    if (status === "offered" && !formData.offeredDate) {
+      newErrors.offeredDate = "Offered Date is required.";
+    }
+    if (status === "onboard" && !formData.onboardDate) {
+      newErrors.onboardDate = "Onboard Date is required.";
+    }
+    if (
+      (status === "l1" ||
+        (["l2", "l3"].includes(status) && formData.isFeeded)) &&
+      (!formData.interviewDate ||
+        !formData.interviewTime ||
+        !formData.interviewers ||
+        !formData.mode)
+    ) {
+      if (!formData.interviewDate)
+        newErrors.interviewDate = "Interview Date is required.";
+      if (!formData.interviewTime)
+        newErrors.interviewTime = "Interview Time is required.";
+      if (!formData.interviewers)
+        newErrors.interviewers = "Interviewer is required.";
+      if (!formData.mode) newErrors.mode = "Mode is required.";
+    }
+
+    if (["l2", "l3"].includes(status) && !formData.isFeeded) {
+      if (!formData.remarks) newErrors.remarks = "Remarks are required.";
+      if (!formData.communication)
+        newErrors.communication = "Rate communication.";
+      if (!formData.technical) newErrors.technical = "Rate technical skill.";
+      if (!formData.overall) newErrors.overall = "Rate overall performance.";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async () => {
+    if (!validateForm()) return;
+
+    setSubmitting(true);
+    try {
+      const data = new FormData();
+
+      Object.entries(formData).forEach(([key, value]) => {
+        if (value !== null && value !== undefined) {
+          data.append(key, String(value));
+        }
+      });
+
+      if (["l2", "l3"].includes(status) && !formData.isFeeded) {
+        data.append("communication", String(formData.communication));
+        data.append("technical", String(formData.technical));
+        data.append("overall", String(formData.overall));
+      }
+
+      data.append("status", status);
+      data.append("type", "update-candidate-status");
+      data.append("id", editId);
+
+      const response = await axios.post(
+        "http://127.0.0.1:8000/post-data",
+        data,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      if (response.status === 200) {
+        setFormData({
+          offeredDate: "",
+          onboardDate: "",
+          interviewDate: "",
+          interviewTime: "",
+          interviewers: "",
+          mode: "",
+          remarks: "",
+          communication: 0,
+          technical: 0,
+          overall: 0,
+          isFeeded: false,
+        });
+
+        if (!formData.isFeeded && ["l2", "l3"].includes(status)) {
+          toast.success("Feedback submitted successfully");
+          setFormData((prev: any) => ({ ...prev, isFeeded: true }));
+        } else if (
+          status === "l1" ||
+          (["l2", "l3"].includes(status) && formData.isFeeded)
+        ) {
+          toast.success("Interview scheduled successfully");
+          setIsOpen(false);
+        } else {
+          toast.success("Status updated successfully");
+          setIsOpen(false);
+        }
+
+        loadCandidates();
+
+        if (status === "onboard") {
+          setIsInvoiceOpen(true);
+        }
+      }
+    } catch (error) {
+      console.error("API submission error:", error);
+      toast.error("Failed to update candidate status.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev: any) => ({ ...prev, [name]: value }));
   };
 
   return (
@@ -450,7 +683,7 @@ const UpdateStatusDialog = ({
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent
           style={
-            ["2", "3", "4"].includes(status)
+            ["l1", "l2", "l3"].includes(status)
               ? {
                   maxWidth: "80%",
                   maxHeight: "90vh",
@@ -467,18 +700,19 @@ const UpdateStatusDialog = ({
 
             <div
               className={`${
-                ["2", "3", "4"].includes(status)
+                ["l1", "l2", "l3"].includes(status)
                   ? "grid grid-cols-1 sm:grid-cols-2 gap-8"
                   : ""
               }`}
             >
               <div className="flex flex-col gap-4 justify-between">
+                {/* Candidate Name */}
                 <div className="flex justify-between items-center gap-4">
                   <Label className="w-[30%] text-[#1E293B] font-medium">
                     Candidate Name
                   </Label>
                   <span className="w-[70%] text-[#4B5563] text-sm">
-                    Albort Brade
+                    {getData.candidateName || "N/A"}
                   </span>
                 </div>
 
@@ -488,7 +722,7 @@ const UpdateStatusDialog = ({
                     Email / Mobile
                   </Label>
                   <span className="w-[70%] text-[#4B5563] text-sm">
-                    albort.brade@gmail.com / 878687885
+                    {getData.email} / {getData.mobileNumber}
                   </span>
                 </div>
 
@@ -498,7 +732,7 @@ const UpdateStatusDialog = ({
                     Job Posting
                   </Label>
                   <span className="w-[70%] text-[#4B5563] text-sm">
-                    Fullstack Developer
+                    {getData.jobPosting}
                   </span>
                 </div>
 
@@ -509,7 +743,7 @@ const UpdateStatusDialog = ({
                   </Label>
                   <span className="w-[70%] text-[#4B5563] text-sm">
                     <Badge className="bg-[#0044A3] text-white font-semibold">
-                      Sourced
+                      {ucFirst(getData.jobPosting)}
                     </Badge>
                   </span>
                 </div>
@@ -521,144 +755,251 @@ const UpdateStatusDialog = ({
                   </Label>
                   <Select
                     name="status"
+                    value={status}
                     onValueChange={(value) => {
-                      setStatus(value), setIsFeeded(false);
+                      setStatus(value), setFormData({ isFeeded: false });
                     }}
                   >
                     <SelectTrigger className="w-[70%] px-4 py-2 border rounded-md">
                       <SelectValue placeholder="Select Status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="1">Sourced</SelectItem>
-                      <SelectItem value="2">L1</SelectItem>
-                      <SelectItem value="3">L2</SelectItem>
-                      <SelectItem value="4">L3</SelectItem>
-                      <SelectItem value="5">Offered</SelectItem>
-                      <SelectItem value="6">Denied</SelectItem>
-                      <SelectItem value="7">Onboard</SelectItem>
-                      <SelectItem value="8">Rejected</SelectItem>
+                      <SelectItem value="sourced">Sourced</SelectItem>
+                      <SelectItem value="l1">L1</SelectItem>
+                      <SelectItem value="l2">L2</SelectItem>
+                      <SelectItem value="l3">L3</SelectItem>
+                      <SelectItem value="offered">Offered</SelectItem>
+                      <SelectItem value="onboard">Onboard</SelectItem>
+                      <SelectItem value="denied">Denied</SelectItem>
+                      <SelectItem value="rejected">Rejected</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                {status == "5" && (
-                  <div className="flex items-center gap-4">
-                    <Label className="w-[30%] text-[#1E293B] font-medium">
-                      Offered Date
-                    </Label>
-                    <Input
-                      type="date"
-                      placeholder="Select Date"
-                      className="w-[70%] px-4 py-2 border rounded-md"
-                    />
+
+                {/* Offered Date */}
+                {status === "offered" && (
+                  <div className="flex flex-col gap-1 w-full">
+                    <div className="flex items-center gap-4">
+                      <Label className="w-[30%]">Offered Date</Label>
+                      <Input
+                        name="offeredDate"
+                        type="date"
+                        value={formData.offeredDate}
+                        onChange={handleInputChange}
+                        className="w-[70%] px-4 py-2 border rounded-md"
+                      />
+                    </div>
+                    {errors.offeredDate && (
+                      <span className="text-red-500 text-[12px] mt-1 ml-[33%]">
+                        {errors.offeredDate}
+                      </span>
+                    )}
                   </div>
                 )}
 
-                {status == "7" && (
-                  <div className="flex items-center gap-4">
-                    <Label className="w-[30%] text-[#1E293B] font-medium">
-                      Onboard Date
-                    </Label>
-                    <Input
-                      type="date"
-                      placeholder="Select Date"
-                      className="w-[70%] px-4 py-2 border rounded-md"
-                    />
+                {/* Onboard Date */}
+                {status === "onboard" && (
+                  <div className="flex flex-col gap-1 w-full">
+                    <div className="flex items-center gap-4">
+                      <Label className="w-[30%]">Onboard Date</Label>
+                      <Input
+                        name="onboardDate"
+                        type="date"
+                        value={formData.onboardDate}
+                        onChange={handleInputChange}
+                        className="w-[70%] px-4 py-2 border rounded-md"
+                      />
+                    </div>
+                    {errors.onboardDate && (
+                      <span className="text-red-500 text-[12px] mt-1 ml-[33%]">
+                        {errors.onboardDate}
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
-              {(status == "2" || (["3", "4"].includes(status) && isFeeded)) && (
+
+              {/* Interview Scheduling */}
+              {(status === "l1" ||
+                (["l2", "l3"].includes(status) && formData.isFeeded)) && (
                 <div className="space-y-6">
                   <h2 className="text-lg text-[#0044A3] font-semibold text-center mb-4">
                     Schedule Interview
                   </h2>
                   <div className="space-y-4">
                     {/* Interview Date */}
-                    <div className="flex items-center gap-4">
-                      <Label className="w-[30%] text-[#1E293B] font-medium">
-                        Interview Date
-                      </Label>
-                      <Input
-                        type="date"
-                        placeholder="Select Date"
-                        className="w-[70%] px-4 py-2 border rounded-md"
-                      />
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-4">
+                        <Label className="w-[30%]">Interview Date</Label>
+                        <Input
+                          name="interviewDate"
+                          type="date"
+                          value={formData.interviewDate}
+                          onChange={handleInputChange}
+                          className="w-[70%] px-4 py-2 border rounded-md"
+                        />
+                      </div>
+                      {errors.interviewDate && (
+                        <span className="text-red-500 text-[12px] mt-1 ml-[33%]">
+                          {errors.interviewDate}
+                        </span>
+                      )}
                     </div>
 
                     {/* Interview Time */}
-                    <div className="flex items-center gap-4">
-                      <Label className="w-[30%] text-[#1E293B] font-medium">
-                        Interview Time
-                      </Label>
-                      <Input
-                        type="time"
-                        placeholder="Select Time"
-                        className="w-[70%] px-4 py-2 border rounded-md"
-                      />
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-4">
+                        <Label className="w-[30%]">Interview Time</Label>
+                        <Input
+                          name="interviewTime"
+                          type="time"
+                          value={formData.interviewTime}
+                          onChange={handleInputChange}
+                          className="w-[70%] px-4 py-2 border rounded-md"
+                        />
+                      </div>
+                      {errors.interviewTime && (
+                        <span className="text-red-500 text-[12px] mt-1 ml-[33%]">
+                          {errors.interviewTime}
+                        </span>
+                      )}
                     </div>
 
-                    {/* Interviewer Email */}
-                    <div className="flex items-center gap-4">
-                      <Label className="w-[30%] text-[#1E293B] font-medium">
-                        Interviewer
-                      </Label>
-                      <Input
-                        type="text"
-                        placeholder="Enter Interviewer Email"
-                        className="w-[70%] px-4 py-2 border rounded-md"
-                      />
+                    {/* Interviewer */}
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-4">
+                        <Label className="w-[30%]">Interviewer</Label>
+                        <Input
+                          name="interviewers"
+                          type="text"
+                          value={formData.interviewers}
+                          onChange={handleInputChange}
+                          className="w-[70%] px-4 py-2 border rounded-md"
+                        />
+                      </div>
+                      {errors.interviewers && (
+                        <span className="text-red-500 text-[12px] mt-1 ml-[33%]">
+                          {errors.interviewers}
+                        </span>
+                      )}
                     </div>
 
                     {/* Interview Mode */}
-                    <div className="flex items-center gap-4">
-                      <Label className="w-[30%] text-[#1E293B] font-medium">
-                        Mode
-                      </Label>
-                      <Select name="mode">
-                        <SelectTrigger className="w-[70%] px-4 py-2 border rounded-md">
-                          <SelectValue placeholder="Select Mode" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="1">Online</SelectItem>
-                          <SelectItem value="2">Inperson</SelectItem>
-                        </SelectContent>
-                      </Select>
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-4">
+                        <Label className="w-[30%]">Mode</Label>
+                        <Select
+                          name="mode"
+                          value={formData.mode}
+                          onValueChange={(val) =>
+                            setFormData((prev: typeof formData) => ({
+                              ...prev,
+                              mode: val,
+                            }))
+                          }
+                        >
+                          <SelectTrigger className="w-[70%] px-4 py-2 border rounded-md">
+                            <SelectValue placeholder="Select Mode" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="1">Online</SelectItem>
+                            <SelectItem value="2">Inperson</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {errors.mode && (
+                        <span className="text-red-500 text-[12px] mt-1 ml-[33%]">
+                          {errors.mode}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
               )}
-              {["3", "4"].includes(status) && !isFeeded && (
+
+              {/* Feedback Submission */}
+              {["l2", "l3"].includes(status) && !formData.isFeeded && (
                 <div className="space-y-6">
                   <h2 className="text-lg text-[#0044A3] font-semibold text-center mb-4">
-                    Submit Feedback {isFeeded}
+                    Submit Feedback
                   </h2>
                   <div className="space-y-4">
-                    <div className="flex items-center gap-4">
-                      <Label className="w-[30%] text-[#1E293B] font-medium">
-                        Communication Skill
-                      </Label>
-                      <Rating />
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-4">
+                        <Label className="w-[30%]">Communication Skill</Label>
+                        <Rating
+                          value={formData.communication}
+                          onChange={(value) =>
+                            setFormData((prev: typeof formData) => ({
+                              ...prev,
+                              communication: value,
+                            }))
+                          }
+                        />
+                      </div>
+                      {errors.communication && (
+                        <span className="text-red-500 text-[12px] mt-1 ml-[33%]">
+                          {errors.communication}
+                        </span>
+                      )}
                     </div>
-                    <div className="flex items-center gap-4">
-                      <Label className="w-[30%] text-[#1E293B] font-medium">
-                        Technical Skill
-                      </Label>
-                      <Rating />
+
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-4">
+                        <Label className="w-[30%]">Technical Skill</Label>
+                        <Rating
+                          value={formData.technical}
+                          onChange={(value) =>
+                            setFormData((prev: typeof formData) => ({
+                              ...prev,
+                              technical: value,
+                            }))
+                          }
+                        />
+                      </div>
+                      {errors.technical && (
+                        <span className="text-red-500 text-[12px] mt-1 ml-[33%]">
+                          {errors.technical}
+                        </span>
+                      )}
                     </div>
-                    <div className="flex items-center gap-4">
-                      <Label className="w-[30%] text-[#1E293B] font-medium">
-                        Overall Ratings
-                      </Label>
-                      <Rating />
+
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-4">
+                        <Label className="w-[30%]">Overall Ratings</Label>
+                        <Rating
+                          value={formData.overall}
+                          onChange={(value) =>
+                            setFormData((prev: typeof formData) => ({
+                              ...prev,
+                              overall: value,
+                            }))
+                          }
+                        />
+                      </div>
+                      {errors.overall && (
+                        <span className="text-red-500 text-[12px] mt-1 ml-[33%]">
+                          {errors.overall}
+                        </span>
+                      )}
                     </div>
-                    <div className="flex items-center gap-4">
-                      <Label className="w-[30%] text-[#1E293B] font-medium">
-                        Remarks
-                      </Label>
-                      <Textarea
-                        className="w-[70%]"
-                        name="remarks"
-                        placeholder="Enter your remarks"
-                      />
+
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-4">
+                        <Label className="w-[30%]">Remarks</Label>
+                        <Textarea
+                          name="remarks"
+                          value={formData.remarks}
+                          onChange={handleInputChange}
+                          className="w-[70%]"
+                          placeholder="Enter your remarks"
+                        />
+                      </div>
+                      {errors.remarks && (
+                        <span className="text-red-500 text-[12px] mt-1 ml-[33%]">
+                          {errors.remarks}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -668,18 +1009,19 @@ const UpdateStatusDialog = ({
             {/* Buttons */}
             <div className="flex justify-center gap-6 mt-8">
               <Button
+                disabled={submitting}
                 className="bg-[#0044A3] text-white px-6 py-3 rounded-md hover:bg-blue-950"
-                onClick={() => {
-                  if (status === "7") {
-                    setIsOpen(false);
-                    setIsInvoiceOpen(true); // Open the invoice when status is "7"
-                  }
-                  handleSubmit({ isFeeded }); // Then, submit the form with the current feeded state
-                }}
+                onClick={handleSubmit}
               >
-                {["3", "4"].includes(status) && !isFeeded
+                {submitting
+                  ? ["l2", "l3"].includes(status) && formData.isFeeded
+                    ? "Submitting..."
+                    : status === "onboard"
+                    ? "Generating..."
+                    : "Updating..."
+                  : ["l2", "l3"].includes(status) && !formData.isFeeded
                   ? "Submit Feedback"
-                  : status === "7"
+                  : status === "onboard"
                   ? "Update & Generate Invoice"
                   : "Update"}
               </Button>
@@ -694,6 +1036,8 @@ const UpdateStatusDialog = ({
           </DialogHeader>
         </DialogContent>
       </Dialog>
+
+      {/* Invoice Dialog */}
       <InvoiceDialog
         isInvoiceOpen={isInvoiceOpen}
         setIsInvoiceOpen={setIsInvoiceOpen}
@@ -782,25 +1126,23 @@ const InvoiceDialog = ({
   </Dialog>
 );
 
-const Rating = () => {
-  // Initial rating state is set to 0
-  const [rating, setRating] = useState(0);
-
-  // Handle click on star to update rating
-  const handleRating = (index: number) => {
-    setRating(index + 1); // Set rating to the clicked star's index + 1
-  };
-
+const Rating = ({
+  value,
+  onChange,
+}: {
+  value: number;
+  onChange: (value: number) => void;
+}) => {
   // Generate the star icons
   const stars = [];
   for (let i = 0; i < 5; i++) {
     stars.push(
       <span
         key={i}
-        onClick={() => handleRating(i)}
+        onClick={() => onChange(i + 1)} // Call onChange with the new rating
         style={{
           cursor: "pointer",
-          color: i < rating ? "gold" : "gray",
+          color: i < value ? "gold" : "gray",
           fontSize: "30px",
         }}
       >
