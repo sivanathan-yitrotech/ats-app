@@ -60,7 +60,21 @@ const CandidateStatus = () => {
   const [page, setPage] = useState(1);
   const [editId, setEditId] = useState("");
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    id: string;
+    offeredDate: string;
+    onboardDate: string;
+    interviewDate: string;
+    interviewTime: string;
+    interviewers: string;
+    mode: string;
+    remarks: string;
+    communication: number;
+    technical: number;
+    overall: number;
+    isFeeded: boolean;
+  }>({
+    id: "",
     offeredDate: "",
     onboardDate: "",
     interviewDate: "",
@@ -595,6 +609,46 @@ const UpdateStatusDialog: React.FC<UpdateStatusDialogProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
+  const [invoiceData, setInvoiceData] = useState({
+    id: "",
+    candidateName: "",
+    email: "",
+    mobileNumber: "",
+    jobPosting: "",
+    onboardDate: "",
+    recruiters: [],
+    assignedBy: "",
+    invoiceCurrency: "",
+    invoiceAmount: "",
+  });
+
+  const getInvoiceDetails = (id: string) => {
+    axios
+      .get("http://127.0.0.1:8000/get-data", {
+        params: { type: "get-invoice-details", id: id },
+      })
+      .then((response) => {
+        const resData = response.data.data;
+        setInvoiceData({
+          id: resData.id,
+          candidateName: resData.candidateName,
+          email: resData.email,
+          mobileNumber: resData.mobileNumber,
+          jobPosting: resData.jobPosting,
+          onboardDate: resData.onboardDate,
+          recruiters: resData.recruiters,
+          assignedBy: resData.assignedBy,
+          invoiceCurrency: resData.invoiceCurrency,
+          invoiceAmount: resData.invoiceAmount,
+        });
+        setIsOpen(false);
+        setIsInvoiceOpen(true);
+      })
+      .catch((error) => {
+        console.error("API Error:", error);
+      });
+  };
+
   const handleSubmit = async () => {
     if (!validateForm()) return;
 
@@ -644,23 +698,28 @@ const UpdateStatusDialog: React.FC<UpdateStatusDialogProps> = ({
         });
 
         if (!formData.isFeeded && ["l2", "l3"].includes(status)) {
-          toast.success("Feedback submitted successfully");
-          setFormData((prev: any) => ({ ...prev, isFeeded: true }));
+          if (status != "onboard") {
+            toast.success("Feedback submitted successfully");
+            setFormData((prev: any) => ({ ...prev, isFeeded: true }));
+          }
         } else if (
           status === "l1" ||
           (["l2", "l3"].includes(status) && formData.isFeeded)
         ) {
-          toast.success("Interview scheduled successfully");
-          setIsOpen(false);
+          if (status != "onboard") {
+            toast.success("Interview scheduled successfully");
+            setIsOpen(false);
+          }
         } else {
-          toast.success("Status updated successfully");
-          setIsOpen(false);
+          if (status != "onboard") {
+            toast.success("Status updated successfully");
+            setIsOpen(false);
+          }
         }
-
-        loadCandidates();
-
         if (status === "onboard") {
-          setIsInvoiceOpen(true);
+          getInvoiceDetails(formData.id);
+        } else {
+          loadCandidates();
         }
       }
     } catch (error) {
@@ -1041,6 +1100,8 @@ const UpdateStatusDialog: React.FC<UpdateStatusDialogProps> = ({
       <InvoiceDialog
         isInvoiceOpen={isInvoiceOpen}
         setIsInvoiceOpen={setIsInvoiceOpen}
+        invoiceData={invoiceData}
+        loadCandidates={loadCandidates}
       />
     </>
   );
@@ -1049,82 +1110,137 @@ const UpdateStatusDialog: React.FC<UpdateStatusDialogProps> = ({
 const InvoiceDialog = ({
   isInvoiceOpen,
   setIsInvoiceOpen,
+  invoiceData,
+  loadCandidates,
 }: {
   isInvoiceOpen: boolean;
   setIsInvoiceOpen: React.Dispatch<React.SetStateAction<boolean>>;
-}) => (
-  <Dialog open={isInvoiceOpen} onOpenChange={setIsInvoiceOpen}>
-    <DialogContent className="rounded-lg">
-      <DialogHeader>
-        <DialogTitle className="my-1 text-lg text-[#0044A3] text-center">
-          Generate New Invoice
-        </DialogTitle>
-      </DialogHeader>
-      <div className="flex justify-between items-center gap-4">
-        <Label className="w-[30%] text-[#1E293B] font-medium">
-          Candidate Name
-        </Label>
-        <span className="w-[70%] text-[#4B5563] text-sm">Albort Brade</span>
-      </div>
+  invoiceData: any;
+  loadCandidates: () => void;
+}) => {
+  const generateInvoice = async (id: string) => {
+    try {
+      const data = new FormData();
+      data.append("type", "generate-invoice");
+      data.append("id", id);
 
-      {/* Email/Mobile */}
-      <div className="flex items-center gap-4">
-        <Label className="w-[30%] text-[#1E293B] font-medium">
-          Email / Mobile
-        </Label>
-        <span className="w-[70%] text-[#4B5563] text-sm">
-          albort.brade@gmail.com / 878687885
-        </span>
-      </div>
+      const response = await axios.post(
+        "http://127.0.0.1:8000/post-data",
+        data,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
 
-      {/* Job Posting */}
-      <div className="flex items-center gap-4">
-        <Label className="w-[30%] text-[#1E293B] font-medium">
-          Job Posting
-        </Label>
-        <span className="w-[70%] text-[#4B5563] text-sm">
-          Fullstack Developer
-        </span>
-      </div>
-      <div className="flex items-center gap-4">
-        <Label className="w-[30%] text-[#1E293B] font-medium">Onboard On</Label>
-        <span className="w-[70%] text-[#4B5563] text-sm">20-04-2025</span>
-      </div>
-      <div className="flex items-center gap-4">
-        <Label className="w-[30%] text-[#1E293B] font-medium">
-          Recruited By
-        </Label>
-        <span className="w-[70%] text-[#4B5563] text-sm">Sivanathan T</span>
-      </div>
-      <div className="flex items-center gap-4">
-        <Label className="w-[30%] text-[#1E293B] font-medium">
-          Assigned By
-        </Label>
-        <span className="w-[70%] text-[#4B5563] text-sm">Janani</span>
-      </div>
-      <div className="flex items-center gap-4">
-        <Label className="w-[30%] text-[#1E293B] font-medium">
-          Invoice Amount
-        </Label>
-        <span className="w-[70%] text-[#4B5563] text-sm">$1200</span>
-      </div>
-      <div className="flex justify-center gap-6 my-3">
-        <Button
-          className="bg-[#0044A3] text-white px-6 py-3 rounded-md hover:bg-blue-950"
-          onClick={() => setIsInvoiceOpen(false)}
-        >
-          Generate Invoice
-        </Button>
-        <Button
-          onClick={() => setIsInvoiceOpen(false)}
-          className="bg-white text-[#64748B] px-6 py-3 rounded-md border border-[#64748B] hover:bg-neutral-100"
-        >
-          Cancel
-        </Button>
-      </div>
-    </DialogContent>
-  </Dialog>
-);
+      if (response.status === 200) {
+        setIsInvoiceOpen(false);
+        toast.success("Invoice Generated successfully");
+        loadCandidates();
+      }
+    } catch (error) {
+      console.error("API submission error:", error);
+      toast.error("Failed to update candidate status.");
+    }
+  };
+
+  return (
+    <Dialog open={isInvoiceOpen} onOpenChange={setIsInvoiceOpen}>
+      <DialogContent className="rounded-lg">
+        <DialogHeader>
+          <DialogTitle className="my-1 text-lg text-[#0044A3] text-center">
+            Generate New Invoice
+          </DialogTitle>
+        </DialogHeader>
+        <div className="flex justify-between items-center gap-4">
+          <Label className="w-[30%] text-[#1E293B] font-medium">
+            Candidate Name
+          </Label>
+          <span className="w-[70%] text-[#4B5563] text-sm">
+            {invoiceData.candidateName}
+          </span>
+        </div>
+
+        {/* Email/Mobile */}
+        <div className="flex items-center gap-4">
+          <Label className="w-[30%] text-[#1E293B] font-medium">
+            Email / Mobile
+          </Label>
+          <span className="w-[70%] text-[#4B5563] text-sm">
+            {invoiceData.email} / {invoiceData.mobileNumber}
+          </span>
+        </div>
+
+        {/* Job Posting */}
+        <div className="flex items-center gap-4">
+          <Label className="w-[30%] text-[#1E293B] font-medium">
+            Job Posting
+          </Label>
+          <span className="w-[70%] text-[#4B5563] text-sm">
+            {invoiceData.jobPosting}
+          </span>
+        </div>
+        <div className="flex items-center gap-4">
+          <Label className="w-[30%] text-[#1E293B] font-medium">
+            Onboard On
+          </Label>
+          <span className="w-[70%] text-[#4B5563] text-sm">
+            {invoiceData.onboardDate}
+          </span>
+        </div>
+        <div className="flex items-center gap-4">
+          <Label className="w-[30%] text-[#1E293B] font-medium">
+            Recruited By
+          </Label>
+          <div className="w-[70%]">
+            <div className="flex gap-1">
+              {invoiceData.recruiters.map((rec, ind) => (
+                <span
+                  key={ind}
+                  className="bg-blue-300 text-[#4B5563] text-[12px] px-2 py-1 rounded-xl"
+                >
+                  {rec}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-4">
+          <Label className="w-[30%] text-[#1E293B] font-medium">
+            Assigned By
+          </Label>
+          <span className="w-[70%] text-[#4B5563] text-sm">
+            {invoiceData.assignedBy}
+          </span>
+        </div>
+        <div className="flex items-center gap-4">
+          <Label className="w-[30%] text-[#1E293B] font-medium">
+            Invoice Amount
+          </Label>
+          <span className="w-[70%] text-[#4B5563] text-sm">
+            {invoiceData.invoiceCurrency}
+            {invoiceData.invoiceAmount}
+          </span>
+        </div>
+        <div className="flex justify-center gap-6 my-3">
+          <Button
+            className="bg-[#0044A3] text-white px-6 py-3 rounded-md hover:bg-blue-950"
+            onClick={() => generateInvoice(invoiceData.id)}
+          >
+            Generate Invoice
+          </Button>
+          <Button
+            onClick={() => setIsInvoiceOpen(false)}
+            className="bg-white text-[#64748B] px-6 py-3 rounded-md border border-[#64748B] hover:bg-neutral-100"
+          >
+            Cancel
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 const Rating = ({
   value,
