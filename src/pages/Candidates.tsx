@@ -4,6 +4,8 @@ import { Plus, FilePlus, Pencil, Trash2, FileMinus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Location from "@/components/ui/location";
+import { TagsInput } from "@/components/ui/taginput";
+
 import {
   Table,
   TableBody,
@@ -37,6 +39,7 @@ const tableHeaderClass = "text-[#0044A3] font-semibold text-sm py-3 px-6";
 const cellClass = "text-sm font-medium text-gray-700 py-3 px-6";
 
 interface Candidate {
+  id: string;
   candidateName: string;
   contactNumber: string;
   email: string;
@@ -76,7 +79,7 @@ const Candidates = () => {
   const [page, setPage] = useState(1);
 
   const [errors, setErrors] = useState<
-    Partial<Omit<typeof formData, "profile"> & { profile: string | null }>
+    Partial<Omit<CandidateFormData, "profile"> & { profile: string | null }>
   >({});
 
   const loadCandidates = () => {
@@ -103,7 +106,7 @@ const Candidates = () => {
     loadCandidates();
   }, [sortBy, search, page]);
 
-  interface FormData {
+  interface CandidateFormData {
     id?: string;
     candidateName: string;
     contactNumber: string;
@@ -115,11 +118,16 @@ const Candidates = () => {
     city: string;
     joiningDate: string;
     ctc: string;
-    skills: string;
+    skills: [];
     resume: File | null;
   }
 
-  const [formData, setFormData] = useState<FormData>({
+  type FormData = CandidateFormData & {
+    id: string;
+    candidateName: string; // Ensure candidateName is included in FormData
+  };
+
+  const [formData, setFormData] = useState<CandidateFormData>({
     id: "",
     candidateName: "",
     jobRole: "",
@@ -131,7 +139,7 @@ const Candidates = () => {
     city: "",
     joiningDate: "",
     ctc: "",
-    skills: "",
+    skills: [],
     resume: null,
   });
 
@@ -263,7 +271,23 @@ const CardSection = ({
             variant="secondary"
             className="ml-4 cursor-pointer"
             onClick={() => {
-              setIsOpen(true), setFormData({}), setErrors({});
+              setIsOpen(true),
+                setFormData({
+                  id: "",
+                  candidateName: "",
+                  jobRole: "",
+                  email: "",
+                  contactNumber: "",
+                  years: "",
+                  months: "",
+                  country: "",
+                  city: "",
+                  joiningDate: "",
+                  ctc: "",
+                  skills: [],
+                  resume: null,
+                }),
+                setErrors({});
             }}
           >
             <Plus className="mr-2 h-4 w-4" /> Add Candidate
@@ -414,7 +438,7 @@ const CandidateTable = ({
                     variant="secondary"
                     className="cursor-pointer"
                     size="icon"
-                    onClick={() => editData(candidate.id)}
+                    onClick={() => editData({ id: candidate.id })}
                   >
                     <Pencil className="h-5 w-5 cursor-pointer hover:text-blue-500" />
                   </Button>
@@ -431,7 +455,7 @@ const CandidateTable = ({
                       variant="secondary"
                       className="cursor-pointer"
                       size="icon"
-                      onClick={() => assignPosting(candidate.id)}
+                      onClick={() => assignPosting({ id: candidate.id })}
                     >
                       <FilePlus className="h-5 w-5 cursor-pointer text-blue-500 hover:text-blue-500" />
                     </Button>
@@ -440,7 +464,7 @@ const CandidateTable = ({
                       variant="secondary"
                       className="cursor-pointer"
                       size="icon"
-                      onClick={() => unAssignPosting(candidate.id)}
+                      onClick={() => unAssignPosting({ id: candidate.id })}
                     >
                       <FileMinus className="h-5 w-5 cursor-pointer text-red-500 hover:text-blue-500" />
                     </Button>
@@ -463,22 +487,23 @@ const AddCandidateDialog = ({
   setFormData,
   errors,
   setErrors,
-}: AddCandidateDialogProps) => {
-  const [selectedCountry, setSelectedCountry] = useState("");
-  const [selectedCity, setSelectedCity] = useState("");
-
-  // Handle country change
-  const handleCountryChange = (country) => {
-    setSelectedCountry(country);
-  };
-
-  // Handle city change
-  const handleCityChange = (city) => {
-    setSelectedCity(city);
-  };
+}: {
+  isOpen: boolean;
+  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  loadCandidates: () => void;
+  formData: FormData;
+  setFormData: React.Dispatch<React.SetStateAction<FormData>>;
+  errors: Partial<Omit<FormData, "profile"> & { profile: string | null }>;
+  setErrors: React.Dispatch<
+    React.SetStateAction<
+      Partial<Omit<FormData, "profile"> & { profile: string | null }>
+    >
+  >;
+}) => {
   const [submitting, setSubmitting] = useState(false);
 
   const validateForm = (): boolean => {
+    type CandidateErrors = Partial<Record<keyof FormData, string>>;
     const newErrors: CandidateErrors = {};
 
     const isEmpty = (value: any) => !value || value.toString().trim() === "";
@@ -517,7 +542,8 @@ const AddCandidateDialog = ({
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     >
   ) => {
-    const { name, value, type, files } = e.target;
+    const { name, value, type } = e.target as HTMLInputElement;
+    const files = (e.target as HTMLInputElement).files;
     if (type === "file") {
       setFormData((prev) => ({ ...prev, [name]: files?.[0] ?? null }));
     } else {
@@ -557,7 +583,7 @@ const AddCandidateDialog = ({
           city: "",
           joiningDate: "",
           ctc: "",
-          skills: "",
+          skills: [],
           resume: null,
           ctc_symble: "1",
         });
@@ -751,13 +777,12 @@ const AddCandidateDialog = ({
             <div className="flex items-center gap-4">
               <Label className="text-[#1E293B] w-[30%]">Skills</Label>
               <div className="w-[70%] flex flex-col gap-0.5">
-                <Input
-                  name="skills"
-                  type="text"
+                <TagsInput
                   value={formData.skills}
-                  onChange={handleChange}
-                  placeholder="Enter the Skills"
-                  className="w-full placeholder:text-[12px] px-4 py-5"
+                  onChange={(tags) =>
+                    setFormData((prev) => ({ ...prev, skills: tags }))
+                  }
+                  placeholder="Enter Skills"
                 />
                 {errors.skills && (
                   <p className="text-red-500 text-xs mt-1 ml-2">

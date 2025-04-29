@@ -10,6 +10,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { TagsInput } from "@/components/ui/taginput";
 import {
   Select,
   SelectContent,
@@ -66,7 +67,7 @@ const CandidateStatus = () => {
     onboardDate: string;
     interviewDate: string;
     interviewTime: string;
-    interviewers: string;
+    interviewers: string[];
     mode: string;
     remarks: string;
     communication: number;
@@ -79,7 +80,7 @@ const CandidateStatus = () => {
     onboardDate: "",
     interviewDate: "",
     interviewTime: "",
-    interviewers: "",
+    interviewers: [],
     mode: "",
     remarks: "",
     communication: 0,
@@ -928,13 +929,18 @@ const UpdateStatusDialog: React.FC<UpdateStatusDialogProps> = ({
                     <div className="flex flex-col gap-1">
                       <div className="flex items-center gap-4">
                         <Label className="w-[30%]">Interviewer</Label>
-                        <Input
-                          name="interviewers"
-                          type="text"
-                          value={formData.interviewers}
-                          onChange={handleInputChange}
-                          className="w-[70%] px-4 py-2 border rounded-md"
-                        />
+                        <div className="w-[70%]">
+                          <TagsInput
+                            value={formData.interviewers}
+                            onChange={(tags) =>
+                              setFormData((prev: typeof formData) => ({
+                                ...prev,
+                                interviewers: tags,
+                              }))
+                            }
+                            placeholder="Enter Interviewers"
+                          />
+                        </div>
                       </div>
                       {errors.interviewers && (
                         <span className="text-red-500 text-[12px] mt-1 ml-[33%]">
