@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ChevronsUpDown, Check, Mail, Phone, Edit2 } from "lucide-react";
+import { Mail, Phone, Edit2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -17,69 +17,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Command,
-  CommandGroup,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationPrevious,
-  PaginationNext,
-} from "@/components/ui/pagination";
 import { Textarea } from "@/components/ui/textarea";
-const generateCandidate = (status: string, index: number) => {
-  const names = ["John Doe", "Alice Smith", "Bob Martin"];
-  const titles = ["Software Engineer", "Data Scientist", "Backend Developer"];
-  const companies = ["TechCorp", "DataWorks", "TechX"];
-  const recruiters = [
-    "https://i.pravatar.cc/150?img=1",
-    "https://i.pravatar.cc/150?img=2",
-    "https://i.pravatar.cc/150?img=3",
-    "https://i.pravatar.cc/150?img=4",
-    "https://i.pravatar.cc/150?img=5",
-  ];
-  const interviewers = [
-    "https://i.pravatar.cc/150?img=6",
-    "https://i.pravatar.cc/150?img=7",
-    "https://i.pravatar.cc/150?img=8",
-    "https://i.pravatar.cc/150?img=9",
-    "https://i.pravatar.cc/150?img=10",
-  ];
-
-  // Create a new candidate object
-  return {
-    name: names[index % names.length],
-    mobile: `91${Math.floor(Math.random() * 1000000000)}`,
-    email: `${names[index % names.length]
-      .toLowerCase()
-      .replace(" ", ".")}${Math.floor(Math.random() * 100)}@gmail.com`,
-    title: titles[index % titles.length],
-    company: companies[index % companies.length],
-    status: status,
-    recruiters: [
-      {
-        [`recruiter ${(index % recruiters.length) + 1}`]:
-          recruiters[index % recruiters.length],
-      },
-    ],
-    interviewers: [
-      {
-        [`interviewer ${(index % interviewers.length) + 1}`]:
-          interviewers[index % interviewers.length],
-      },
-    ],
-  };
-};
+import PaginationSection from "@/components/ui/page";
+import NoData from "@/components/ui/nodata";
+import SortBy from "@/components/ui/sortby";
+import { ucFirst } from "../../utils/common";
+import InputField from "@/components/ui/inputfield";
+import axios from "axios";
+import { Toaster } from "@/components/ui/sonner";
+import { toast } from "sonner";
 
 type Candidate = {
   name: string;
@@ -88,38 +34,83 @@ type Candidate = {
   title: string;
   company: string;
   status: string;
-  recruiters: { [key: string]: string }[];
-  interviewers: { [key: string]: string }[];
+  recruiters: string[];
+  interviewers: string[];
 };
 
-const candidatesStatus: Record<string, Candidate[]> = {
-  sourced: [],
-  l1: [],
-  l2: [],
-  l3: [],
-  offered: [],
-  onboard: [],
-  denied: [],
-  rejected: [],
-};
-
-// Loop to generate more sample candidates for each status
-const generateMoreCandidates = (
-  statusTypes: (keyof typeof candidatesStatus)[],
-  numberOfCandidates: number
-) => {
-  statusTypes.forEach((status) => {
-    for (let i = 0; i < numberOfCandidates; i++) {
-      candidatesStatus[status].push(generateCandidate(status, i));
-    }
-  });
-};
-
-// Call the function to generate 5 more candidates for each status type
-generateMoreCandidates(Object.keys(candidatesStatus), 5);
-
-const AssignedPositions = () => {
+const CandidateStatus = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [options, setOptions] = useState<{
+    clients: { id: string; name: string }[];
+    jobs: { id: string; name: string }[];
+    recruiters: { id: string; name: string }[];
+  }>({
+    clients: [],
+    jobs: [],
+    recruiters: [],
+  });
+  const [filterClient, setFilterClient] = useState("");
+  const [filterJob, setFilterJob] = useState("");
+  const [filterRecruiter, setFilterRecruiter] = useState("");
+  const [sortBy, setSortBy] = useState("");
+  const [search, setSearch] = useState("");
+  const limit = 20;
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+
+  const getOptions = () => {
+    axios
+      .get(`http://127.0.0.1:8000/get-data`, {
+        params: {
+          type: "candidate-status-options",
+        },
+      })
+      .then((response) => {
+        if (response.data && response.data.data) {
+          setOptions(response.data.data);
+        } else {
+          console.error("Unexpected response structure:", response.data);
+        }
+      })
+      .catch((error) => {
+        console.error("API Error:", error);
+      });
+  };
+
+  const loadCandidates = () => {
+    axios
+      .get(`http://127.0.0.1:8000/get-data`, {
+        params: {
+          type: "candidate-status-list",
+          page: page,
+          limit: limit,
+          filterClient: filterClient,
+          filterJob: filterJob,
+          filterRecruiter: filterRecruiter,
+          sortby: sortBy,
+          searchby: search,
+        },
+      })
+      .then((response) => {
+        if (response.data && response.data.data) {
+          setCandidates(response.data.data);
+          setTotal(75); // Assuming the total count is returned in the response
+        } else {
+          console.error("Unexpected response structure:", response.data);
+        }
+      })
+      .catch((error) => {
+        console.error("API Error:", error);
+      });
+  };
+
+  useEffect(() => {
+    getOptions();
+  }, []);
+  useEffect(() => {
+    loadCandidates();
+  }, [filterClient, filterJob, filterRecruiter, sortBy, search, page]);
 
   return (
     <div className="p-4">
@@ -131,12 +122,24 @@ const AssignedPositions = () => {
         </p>
       </div>
       <CardSection
-        data={candidatesStatus}
+        data={candidates}
         isOpen={isOpen}
         setIsOpen={setIsOpen}
+        setSortBy={setSortBy}
+        setSearch={setSearch}
+        setFilterClient={setFilterClient}
+        setFilterJob={setFilterJob}
+        setFilterRecruiter={setFilterRecruiter}
+        options={options}
       />
       <UpdateStatusDialog isOpen={isOpen} setIsOpen={setIsOpen} />
-      <PaginationSection />
+      <PaginationSection
+        total={total}
+        limit={limit}
+        page={page}
+        setPage={setPage}
+      />
+      <Toaster />
     </div>
   );
 };
@@ -145,15 +148,32 @@ const CardSection = ({
   data,
   isOpen,
   setIsOpen,
+  setSortBy,
+  setSearch,
+  setFilterClient,
+  setFilterJob,
+  setFilterRecruiter,
+  options,
 }: {
-  data: Record<string, Candidate[]>;
+  data: any;
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  setSortBy: React.Dispatch<React.SetStateAction<string>>;
+  setSearch: React.Dispatch<React.SetStateAction<string>>;
+  setFilterClient: React.Dispatch<React.SetStateAction<string>>;
+  setFilterJob: React.Dispatch<React.SetStateAction<string>>;
+  setFilterRecruiter: React.Dispatch<React.SetStateAction<string>>;
+  options: {
+    clients: { id: string; name: string }[];
+    jobs: { id: string; name: string }[];
+    recruiters: { id: string; name: string }[];
+  };
 }) => {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState("");
+  const [active, setActive] = useState("0");
 
-  const sortBy = [
+  const sortOptions = [
     { value: "a-z", label: "A-Z" },
     { value: "z-a", label: "Z-A" },
     { value: "newest", label: "Newest First" },
@@ -161,38 +181,98 @@ const CardSection = ({
     { value: "last_updated", label: "Last Updated" },
   ];
 
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+  };
+
+  const handleSortChange = (val: string) => {
+    setValue(val);
+    setSortBy(val);
+  };
+
   return (
-    <div className="my-10 p-4 bg-white shadow-lg rounded-lg">
+    <div className="my-5 p-4 bg-white shadow-lg rounded-lg">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
-        {["Client Name", "Job Postings", "Recruiter"].map((label, index) => (
-          <div key={index} className="flex flex-col flex-1 gap-2">
-            <Label className="text-gray-800 text-sm font-medium">{label}</Label>
-            <Select name={label.toLowerCase().replace(" ", "")}>
-              <SelectTrigger className="w-full border border-gray-300 rounded-md py-3 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
-                <SelectValue placeholder={`Select ${label}`} />
-              </SelectTrigger>
-              <SelectContent>
-                {/* Replace with dynamic data */}
-                <SelectItem value="1">{label} - 1</SelectItem>
-                <SelectItem value="2">{label} - 2</SelectItem>
-                <SelectItem value="3">{label} - 3</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        ))}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 sm:pt-0">
+        <div className="flex flex-col flex-1 gap-2">
+          <Label className="text-gray-800 text-sm font-medium">
+            Client Name
+          </Label>
+          <Select
+            name="client"
+            onValueChange={(value) => setFilterClient(value)}
+          >
+            <SelectTrigger className="w-full border border-gray-300 rounded-md py-3 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+              <SelectValue placeholder="Select Client Name" />
+            </SelectTrigger>
+            <SelectContent>
+              {options.clients.map(
+                (data: { id: string; name: string }, index: number) => (
+                  <SelectItem key={index} value={data.id}>
+                    {data.name}
+                  </SelectItem>
+                )
+              )}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex flex-col flex-1 gap-2">
+          <Label className="text-gray-800 text-sm font-medium">
+            Job Postings
+          </Label>
+          <Select
+            name="jobPostings"
+            onValueChange={(value) => setFilterJob(value)}
+          >
+            <SelectTrigger className="w-full border border-gray-300 rounded-md py-3 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+              <SelectValue placeholder="Select Job Postings" />
+            </SelectTrigger>
+            <SelectContent>
+              {options.jobs.map(
+                (data: { id: string; name: string }, index: number) => (
+                  <SelectItem key={index} value={data.id}>
+                    {data.name}
+                  </SelectItem>
+                )
+              )}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex flex-col flex-1 gap-2">
+          <Label className="text-gray-800 text-sm font-medium">Recruiter</Label>
+          <Select
+            name="recruiter"
+            onValueChange={(value) => setFilterRecruiter(value)}
+          >
+            <SelectTrigger className="w-full border border-gray-300 rounded-md py-3 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400">
+              <SelectValue placeholder="Select Recruiter" />
+            </SelectTrigger>
+            <SelectContent>
+              {options.recruiters.map(
+                (data: { id: string; name: string }, index: number) => (
+                  <SelectItem key={index} value={data.id}>
+                    {data.name}
+                  </SelectItem>
+                )
+              )}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex items-center gap-4 pt-11 mb-4">
           <Input
             type="text"
             placeholder="Search"
-            className="w-full mt-7 max-w-xs border border-gray-300 rounded-md py-3 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-            onChange={(e) => console.log(e.target.value)} // Placeholder for search logic
+            className="w-[200px] placeholder:text-[12px] px-4 py-5"
+            onChange={handleSearch}
           />
           <SortBy
             open={open}
             setOpen={setOpen}
             value={value}
-            setValue={setValue}
-            sortBy={sortBy}
+            setValue={(val) => handleSortChange(val as string)}
+            sortBy={sortOptions}
           />
         </div>
       </div>
@@ -209,7 +289,7 @@ const CardSection = ({
         ].map((status, index) => (
           <div className="flex flex-col gap-2 py-2 my-2" key={index}>
             <Badge className="bg-zinc-600 text-white font-semibold">
-              {capitalizeFirstLetter(status)}
+              {ucFirst(status)}
             </Badge>
             <div
               key={index}
@@ -264,10 +344,6 @@ const getStatusColor = (status: keyof typeof colors) => {
   return colors[status] || "bg-gray-100";
 };
 
-const capitalizeFirstLetter = (string: string) => {
-  return string.charAt(0).toUpperCase() + string.slice(1);
-};
-
 const CandidateCard = ({
   data,
   type,
@@ -281,93 +357,75 @@ const CandidateCard = ({
 }) => {
   return (
     <>
-      {data.map((card, index) => (
-        <div
-          key={index}
-          className="w-full my-2 bg-white p-4 rounded-lg shadow-lg border border-gray-200 transform transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-2xl"
-        >
-          <div className="mb-3">
-            <div className="flex items-center justify-between relative">
-              <h2 className="text-[13px] font-bold">{card.name}</h2>
-              <Edit2
-                onClick={() => setIsOpen(true)}
-                size={12}
-                className="absolute right-2 top-2 text-gray-500 hover:text-blue-500 cursor-pointer"
-              />
-              {isOpen && <span></span>}
+      {data?.length > 0 ? (
+        data.map((card, index) => (
+          <div
+            key={index}
+            className="w-full my-2 bg-white p-4 rounded-lg shadow-lg border border-gray-200 transform transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-2xl"
+          >
+            <div className="mb-3">
+              <div className="flex items-center justify-between relative">
+                <h2 className="text-[13px] font-bold">{card.name}</h2>
+                <Edit2
+                  onClick={() => setIsOpen(true)}
+                  size={12}
+                  className="absolute right-2 top-2 text-gray-500 hover:text-blue-500 cursor-pointer"
+                />
+                {isOpen && <span></span>}
+              </div>
+
+              <h3 className="text-[12px] font-medium">{card.title}</h3>
+              <p className="mt-1 text-[11px]">{card.company}</p>
+              <div className="flex flex-col justify-between gap-1 mt-2">
+                <div className="flex items-center text-[10px]">
+                  <Mail size={12} className="mr-1" />
+                  {card.email}
+                </div>
+                <div className="flex items-center text-[10px]">
+                  <Phone size={12} className="mr-1" />
+                  {card.mobile}
+                </div>
+              </div>
             </div>
 
-            <h3 className="text-[12px] font-medium">{card.title}</h3>
-            <p className="mt-1 text-[11px]">{card.company}</p>
-            <div className="flex flex-col justify-between gap-1 mt-2">
-              <div className="flex items-center text-[10px]">
-                <i className="fas fa-envelope"></i>
-                <p className="flex items-center gap-1">
-                  <Mail size={12} />
-                  {card.email}
-                </p>
-              </div>
-              <div className="flex items-center text-[10px]">
-                <i className="fas fa-phone-alt"></i>
-                <p className="flex items-center gap-1">
-                  <Phone size={12} /> {card.mobile}
-                </p>
-              </div>
-            </div>
-          </div>
-          {type != "sourced" && (
-            <div className="mt-3">
-              <div className="flex justify-between items-center">
-                <div className="flex flex-col">
-                  <p className="text-[10px] font-semibold mb-1">Recruiters</p>
-                  <div className="flex -space-x-2">
-                    {card.recruiters.map((recruiter, recruiterIndex) => {
-                      const recruiterName = Object.keys(recruiter)[0];
-                      return (
-                        <div key={recruiterIndex} className="relative group">
-                          {/* <img
-                          className="w-8 h-8 rounded-full border-2 border-white object-cover transition-transform duration-300 transform hover:scale-110"
-                          src={recruiterImage}
-                          alt={`Recruiter ${recruiterIndex + 1}`}
-                        /> */}
-                          <p className="text-[10px]">{recruiterName}</p>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-                {["l1", "l2", "l3"].includes(type) && (
+            {type !== "sourced" && (
+              <div className="mt-3">
+                <div className="flex justify-between items-start">
                   <div className="flex flex-col">
-                    <p className="text-[10px] font-semibold mb-1">
-                      Interviewers
-                    </p>
-                    <div className="flex -space-x-2">
-                      {card.interviewers.map(
-                        (interviewer, interviewerIndex) => {
-                          const interviewerName = Object.keys(interviewer)[0];
-                          return (
-                            <div
-                              key={interviewerIndex}
-                              className="relative group"
-                            >
-                              {/* <img
-                          className="w-8 h-8 rounded-full border-2 border-white object-cover transition-transform duration-300 transform hover:scale-110"
-                          src={interviewerImage}
-                          alt={`Interviewer ${interviewerIndex + 1}`}
-                        /> */}
-                              <p className="text-[10px]">{interviewerName}</p>
-                            </div>
-                          );
-                        }
-                      )}
+                    <p className="text-[10px] font-semibold mb-1">Recruiters</p>
+                    <div className="flex flex-col gap-1">
+                      {card.recruiters.map((recruiter, recruiterIndex) => (
+                        <p key={recruiterIndex} className="text-[10px]">
+                          {recruiter}
+                        </p>
+                      ))}
                     </div>
                   </div>
-                )}
+
+                  {["l1", "l2", "l3"].includes(type) && (
+                    <div className="flex flex-col">
+                      <p className="text-[10px] font-semibold mb-1">
+                        Interviewers
+                      </p>
+                      <div className="flex flex-col gap-1">
+                        {card.interviewers.map(
+                          (interviewer, interviewerIndex) => (
+                            <p key={interviewerIndex} className="text-[10px]">
+                              {interviewer}
+                            </p>
+                          )
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
-        </div>
-      ))}
+            )}
+          </div>
+        ))
+      ) : (
+        <NoData />
+      )}
     </>
   );
 };
@@ -758,74 +816,4 @@ const Rating = () => {
   );
 };
 
-const SortBy = ({
-  open,
-  setOpen,
-  value,
-  setValue,
-  sortBy,
-}: {
-  open: boolean;
-  setOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  value: string;
-  setValue: React.Dispatch<React.SetStateAction<string>>;
-  sortBy: { value: string; label: string }[];
-}) => (
-  <Popover open={open} onOpenChange={setOpen}>
-    <PopoverTrigger asChild className="mt-7">
-      <Button variant="outline" className="w-auto justify-between">
-        {value ? sortBy.find((item) => item.value === value)?.label : "Sort By"}
-        <ChevronsUpDown className="opacity-50" />
-      </Button>
-    </PopoverTrigger>
-    <PopoverContent className="w-auto p-0">
-      <Command>
-        <CommandList>
-          <CommandGroup>
-            {sortBy.map((item) => (
-              <CommandItem
-                key={item.value}
-                onSelect={() =>
-                  setValue(item.value === value ? "" : item.value)
-                }
-              >
-                {item.label}
-                <Check
-                  className={`ml-auto ${
-                    value === item.value ? "opacity-100" : "opacity-0"
-                  }`}
-                />
-              </CommandItem>
-            ))}
-          </CommandGroup>
-        </CommandList>
-      </Command>
-    </PopoverContent>
-  </Popover>
-);
-
-const PaginationSection = () => (
-  <Pagination>
-    <PaginationContent>
-      <PaginationItem>
-        <PaginationPrevious href="#" />
-      </PaginationItem>
-      <PaginationItem>
-        <PaginationLink href="#">1</PaginationLink>
-      </PaginationItem>
-      <PaginationItem>
-        <PaginationLink href="#" isActive>
-          2
-        </PaginationLink>
-      </PaginationItem>
-      <PaginationItem>
-        <PaginationLink href="#">3</PaginationLink>
-      </PaginationItem>
-      <PaginationItem>
-        <PaginationNext href="#" />
-      </PaginationItem>
-    </PaginationContent>
-  </Pagination>
-);
-
-export default AssignedPositions;
+export default CandidateStatus;
