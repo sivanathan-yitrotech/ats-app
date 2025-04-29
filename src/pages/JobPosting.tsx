@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import InputField from "@/components/ui/inputfield";
+import Location from "@/components/ui/location";
 import {
   Select,
   SelectContent,
@@ -708,63 +709,20 @@ const AddJobPostingDialog = ({
               </div>
             </div>
 
+            {/* Location */}
             <div className="flex items-center gap-4">
               <Label className="text-[#1E293B] w-[30%]">Location</Label>
-              <div className="w-[34%] flex flex-col gap-0.5">
-                <Select
-                  name="country"
-                  defaultValue=""
-                  value={formData.country}
-                  onValueChange={(val) =>
-                    handleChange({
-                      target: { name: "country", value: val },
-                    } as any)
-                  }
-                >
-                  <SelectTrigger className="placeholder:text-[13px] px-4 py-5 w-[100%]">
-                    <SelectValue placeholder="Select Country" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">India</SelectItem>
-                    <SelectItem value="2">USA</SelectItem>
-                    <SelectItem value="3">Canada</SelectItem>
-                  </SelectContent>
-                </Select>
-                {errors.country && (
-                  <p className="text-red-500 text-xs mt-1 ml-2">
-                    {errors.country}
-                  </p>
-                )}
-              </div>
-              <div className="w-[34%] flex flex-col gap-0.5">
-                <Select
-                  name="city"
-                  defaultValue=""
-                  value={formData.city}
-                  onValueChange={(val) =>
-                    handleChange({
-                      target: { name: "city", value: val },
-                    } as any)
-                  }
-                >
-                  <SelectTrigger className="placeholder:text-[13px] px-4 py-5 w-[100%]">
-                    <SelectValue placeholder="Select City" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">New Delhi</SelectItem>
-                    <SelectItem value="2">Mumbai</SelectItem>
-                    <SelectItem value="3">New York City</SelectItem>
-                    <SelectItem value="4">Los Angeles</SelectItem>
-                    <SelectItem value="5">Toronto</SelectItem>
-                    <SelectItem value="6">Vancouver</SelectItem>
-                  </SelectContent>
-                </Select>
-                {errors.city && (
-                  <p className="text-red-500 text-xs mt-1 ml-2">
-                    {errors.city}
-                  </p>
-                )}
-              </div>
+              <Location
+                className="w-[70%]"
+                initialCountry={formData.country}
+                initialCity={formData.city}
+                onCountryChange={(country: string) =>
+                  setFormData((prev: jobPost) => ({ ...prev, country }))
+                }
+                onCityChange={(city: string) =>
+                  setFormData((prev: jobPost) => ({ ...prev, city }))
+                }
+              />
             </div>
 
             <div className="flex items-center gap-4">
