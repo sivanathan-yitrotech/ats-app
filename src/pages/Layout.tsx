@@ -23,7 +23,12 @@ interface SidebarItemProps {
   onClick?: () => void;
 }
 
-const SidebarItem: React.FC<SidebarItemProps> = ({ url, icon: Icon, text, onClick }) => {
+const SidebarItem: React.FC<SidebarItemProps> = ({
+  url,
+  icon: Icon,
+  text,
+  onClick,
+}) => {
   const location = useLocation();
   const isActive = location.pathname === url;
 
@@ -54,7 +59,11 @@ interface SidebarProps {
   onLinkClick: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ role, sidebarOpen, onLinkClick }) => {
+const Sidebar: React.FC<SidebarProps> = ({
+  role,
+  sidebarOpen,
+  onLinkClick,
+}) => {
   const menus = {
     manager: [
       { icon: LayoutDashboard, text: "Dashboard", url: "/dashboard" },
@@ -63,14 +72,15 @@ const Sidebar: React.FC<SidebarProps> = ({ role, sidebarOpen, onLinkClick }) => 
       { icon: FileUser, text: "Manage Candidates", url: "/candidates" },
       { icon: FileUser, text: "Candidates Status", url: "/candidates-status" },
       { icon: CalendarCheck, text: "Manage Interviews", url: "/interviews" },
-      // { icon: ListChecks, text: "Closed Positions", url: "/closed-postitions" },
       { icon: Receipt, text: "Invoices", url: "/invoices" },
-      // { icon: Users, text: "Candidates", url: "/candidates" },
-      // { icon: CalendarCheck, text: "Interviews", url: "/interviews" },
     ],
     recruiter: [
       { icon: LayoutDashboard, text: "Dashboard", url: "/dashboard" },
-      { icon: CalendarCheck, text: "Assigned Positions", url: "/assigned-positions" },
+      {
+        icon: CalendarCheck,
+        text: "Assigned Positions",
+        url: "/assigned-positions",
+      },
       { icon: FileUser, text: "Manage Candidates", url: "/candidates" },
       { icon: FileUser, text: "Candidates Status", url: "/candidates-status" },
       { icon: CalendarCheck, text: "Manage Interviews", url: "/interviews" },

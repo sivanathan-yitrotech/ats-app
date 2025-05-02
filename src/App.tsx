@@ -1,4 +1,9 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import NotFound from "@/pages/NotFound";
 import Login from "@/pages/Login";
 import Cookie from "js-cookie";
@@ -16,68 +21,183 @@ import AssignedPositions from "./pages/AssignedPositions";
 import Interviews from "./pages/Interviews";
 import Candidates from "./pages/Candidates";
 
-// This is the main App component that includes routing.
+// Component to guard authenticated routes and roles
+const AuthenticatedRoute = ({
+  element: Element,
+  path,
+  permission,
+  role,
+}: {
+  element: React.ElementType;
+  path: string;
+  permission: Record<string, string[]>;
+  role?: string;
+}) => {
+  const userCookie = Cookie.get("user");
+  if (!userCookie) {
+    // Not authenticated, redirect to login
+    return <Navigate to="/" replace />;
+  }
+
+  const user = JSON.parse(userCookie);
+  const userRole = user.role;
+
+  // Check permission for the route
+  if (permission[userRole]?.includes(path)) {
+    return <Element />;
+  } else {
+    // Unauthorized access - redirect to dashboard or 404 page
+    return <Navigate to="/dashboard" replace />;
+  }
+};
+
 const App = () => {
+  // Permissions by role
+  const permission = {
+    manager: [
+      "/dashboard",
+      "/client",
+      "/job-posting",
+      "/candidates",
+      "/candidates-status",
+      "/interviews",
+      "/invoices",
+      "/users",
+      "/job-title",
+    ],
+    recruiter: [
+      "/dashboard",
+      "/assigned-positions",
+      "/candidates",
+      "/candidates-status",
+      "/interviews",
+    ],
+  };
+
   return (
     <Router>
       <Routes>
-        {Cookie.get("user") ? (
-          <>
-            {/* Routes for authenticated users */}
-            <Route
-              path="/"
-              element={<Layout content={Dashboard} isRaw={true} />}
-            />
-            <Route
-              path="/dashboard"
-              element={<Layout content={Dashboard} isRaw={true} />}
-            />
-            <Route
-              path="/users"
-              element={<Layout content={Users} isRaw={false} />}
-            />
-            <Route
-              path="/job-title"
-              element={<Layout content={JobTitle} isRaw={false} />}
-            />
-            <Route
-              path="/client"
-              element={<Layout content={Client} isRaw={false} />}
-            />
-            <Route
-              path="/job-posting"
-              element={<Layout content={JobPosting} isRaw={false} />}
-            />
-            <Route
-              path="/candidates-status"
-              element={<Layout content={CandidatesStatus} isRaw={false} />}
-            />
-            <Route
-              path="/invoices"
-              element={<Layout content={Invoices} isRaw={false} />}
-            />
-            <Route
-              path="/assigned-positions"
-              element={<Layout content={AssignedPositions} isRaw={false} />}
-            />
-            <Route
-              path="/interviews"
-              element={<Layout content={Interviews} isRaw={false} />}
-            />
-            <Route
-              path="/candidates"
-              element={<Layout content={Candidates} isRaw={false} />}
-            />
-          </>
-        ) : (
-          <>
-            <Route path="/" element={<Login />} />
-            <Route path="/forget-password" element={<ForgetPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-          </>
-        )}
+        {/* Public routes */}
+        <Route
+          path="/"
+          element={
+            Cookie.get("user") ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <Login />
+            )
+          }
+        />
+        <Route path="/forget-password" element={<ForgetPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
-        {/* Catch-all route for 404 pages */}
+        {/* Protected routes */}
+        <Route
+          path="/dashboard"
+          element={
+            <AuthenticatedRoute
+              element={() => <Layout content={Dashboard} isRaw={true} />}
+              path="/dashboard"
+              permission={permission}
+            />
+          }
+        />
+        <Route
+          path="/users"
+          element={
+            <AuthenticatedRoute
+              element={() => <Layout content={Users} isRaw={false} />}
+              path="/users"
+              permission={permission}
+            />
+          }
+        />
+        <Route
+          path="/job-title"
+          element={
+            <AuthenticatedRoute
+              element={() => <Layout content={JobTitle} isRaw={false} />}
+              path="/job-title"
+              permission={permission}
+            />
+          }
+        />
+        <Route
+          path="/client"
+          element={
+            <AuthenticatedRoute
+              element={() => <Layout content={Client} isRaw={false} />}
+              path="/client"
+              permission={permission}
+            />
+          }
+        />
+        <Route
+          path="/job-posting"
+          element={
+            <AuthenticatedRoute
+              element={() => <Layout content={JobPosting} isRaw={false} />}
+              path="/job-posting"
+              permission={permission}
+            />
+          }
+        />
+        <Route
+          path="/candidates-status"
+          element={
+            <AuthenticatedRoute
+              element={() => (
+                <Layout content={CandidatesStatus} isRaw={false} />
+              )}
+              path="/candidates-status"
+              permission={permission}
+            />
+          }
+        />
+        <Route
+          path="/invoices"
+          element={
+            <AuthenticatedRoute
+              element={() => <Layout content={Invoices} isRaw={false} />}
+              path="/invoices"
+              permission={permission}
+            />
+          }
+        />
+        <Route
+          path="/assigned-positions"
+          element={
+            <AuthenticatedRoute
+              element={() => (
+                <Layout content={AssignedPositions} isRaw={false} />
+              )}
+              path="/assigned-positions"
+              permission={permission}
+            />
+          }
+        />
+        <Route
+          path="/interviews"
+          element={
+            <AuthenticatedRoute
+              element={() => <Layout content={Interviews} isRaw={false} />}
+              path="/interviews"
+              permission={permission}
+            />
+          }
+        />
+        <Route
+          path="/candidates"
+          element={
+            <AuthenticatedRoute
+              element={() => <Layout content={Candidates} isRaw={false} />}
+              path="/candidates"
+              permission={permission}
+            />
+          }
+        />
+
+        {/* Catch-all for undefined routes */}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
