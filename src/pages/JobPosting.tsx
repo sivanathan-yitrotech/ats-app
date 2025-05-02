@@ -65,14 +65,6 @@ interface jobPost {
   company: string;
 }
 
-const RecruiterList = [
-  { value: "1", label: "Recruiter - 1" },
-  { value: "2", label: "Recruiter - 2" },
-  { value: "3", label: "Recruiter - 3" },
-  { value: "4", label: "Recruiter - 4" },
-  { value: "5", label: "Recruiter - 5" },
-];
-
 const JobPosting = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -83,6 +75,33 @@ const JobPosting = () => {
   const limit = 20;
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+
+  const [options, setOptions] = useState<{
+    clients: { id: string; name: string }[];
+    recruiters: { value: string; label: string }[];
+  }>({
+    clients: [],
+    recruiters: [],
+  });
+
+  const getOptions = () => {
+    axios
+      .get(`http://127.0.0.1:8000/get-data`, {
+        params: {
+          type: "jobposting-options",
+        },
+      })
+      .then((response) => {
+        if (response.data && response.data.data) {
+          setOptions(response.data.data);
+        } else {
+          console.error("Unexpected response structure:", response.data);
+        }
+      })
+      .catch((error) => {
+        console.error("API Error:", error);
+      });
+  };
 
   const loadJobPostings = () => {
     axios
@@ -104,6 +123,10 @@ const JobPosting = () => {
         console.error("API Error:", error);
       });
   };
+
+  useEffect(() => {
+    getOptions();
+  }, []);
 
   useEffect(() => {
     loadJobPostings();
@@ -162,6 +185,7 @@ const JobPosting = () => {
         loadJobPostings={loadJobPostings}
         setFormData={setFormData}
         formData={formData}
+        options={options}
       />
       <DeleteDialog
         isDeleteOpen={isDeleteOpen}
@@ -457,12 +481,17 @@ const AddJobPostingDialog = ({
   loadJobPostings,
   setFormData,
   formData,
+  options,
 }: {
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   loadJobPostings: () => void;
   setFormData: React.Dispatch<React.SetStateAction<jobPost>>;
   formData: any;
+  options: {
+    clients: { id: string; name: string }[];
+    recruiters: { value: string; label: string }[];
+  };
 }) => {
   const [errors, setErrors] = useState<any>({});
   const [submitting, setSubmitting] = useState(false);
@@ -659,9 +688,13 @@ const AddJobPostingDialog = ({
                     <SelectValue placeholder="Select Client" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1">Client - 1</SelectItem>
-                    <SelectItem value="2">Client - 2</SelectItem>
-                    <SelectItem value="3">Client - 3</SelectItem>
+                    {options.clients.map(
+                      (data: { id: string; name: string }, index: number) => (
+                        <SelectItem key={index} value={data.id}>
+                          {data.name}
+                        </SelectItem>
+                      )
+                    )}
                   </SelectContent>
                 </Select>
                 {errors.clientName && (
@@ -830,8 +863,8 @@ const AddJobPostingDialog = ({
                   name="assignRecruiter"
                   className="w-full text-sm"
                   isMulti
-                  options={RecruiterList}
-                  value={RecruiterList.filter((opt) =>
+                  options={options.recruiters}
+                  value={options.recruiters.filter((opt) =>
                     formData.assignRecruiter.includes(opt.value)
                   )}
                 />
