@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { ChevronsUpDown, Menu, Check, Pencil, Download } from "lucide-react";
+import { Menu, Pencil, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ucFirst } from "../../utils/common";
@@ -71,7 +71,7 @@ const Invoices = () => {
       })
       .then((response) => {
         setInvoices(response.data.data);
-        setTotal("55");
+        setTotal(55);
       })
       .catch((error) => {
         console.error("API Error:", error.response?.data || error.message);

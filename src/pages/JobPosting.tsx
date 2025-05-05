@@ -19,6 +19,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import InputField from "@/components/ui/inputfield";
 import Location from "@/components/ui/location";
+import { getUserData, getUserToken } from "../../utils/common";
+import Config from "@/config.json";
 import {
   Select,
   SelectContent,
@@ -51,18 +53,25 @@ const tableHeaderClass = "text-[#0044A3] font-semibold text-sm py-3 px-6";
 const cellClass = "text-sm font-medium text-gray-700 py-3 px-6";
 
 interface jobPost {
-  clientName: string;
+  id: string;
   jobTitle: string;
-  positions: string;
-  experience: string;
-  jobType: string;
-  location: string;
+  experienceMin: string;
+  experienceMax: string;
+  clientName: string;
+  currency: string;
+  ctc: string;
+  country: string;
+  city: string;
+  commissionType: string;
+  commissionValue: string;
   status: string;
+  workMode: string;
+  assignRecruiter: string;
+  positionCount: string;
+  openDate: string;
+  closingDate: string;
   description: string;
-  recruiters: string[];
-  remote: string;
-  title: string;
-  company: string;
+  descriptionFile: null;
 }
 
 const JobPosting = () => {
@@ -75,6 +84,17 @@ const JobPosting = () => {
   const limit = 20;
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [headTotal, setHeadTotal] = useState<{
+    all: number;
+    open: number;
+    closed: number;
+    hold: number;
+  }>({
+    all: 0,
+    open: 0,
+    closed: 0,
+    hold: 0,
+  });
 
   const [options, setOptions] = useState<{
     clients: { id: string; name: string }[];
@@ -86,14 +106,14 @@ const JobPosting = () => {
 
   const getOptions = () => {
     axios
-      .get(`http://127.0.0.1:8000/get-data`, {
-        params: {
-          type: "jobposting-options",
+      .get(`${Config.api_endpoint}fetch_data/fetch/client_list`, {
+        headers: {
+          Authorization: `Bearer ${getUserToken()}`,
         },
       })
       .then((response) => {
-        if (response.data && response.data.data) {
-          setOptions(response.data.data);
+        if (response.data) {
+          setOptions(response.data);
         } else {
           console.error("Unexpected response structure:", response.data);
         }
@@ -105,9 +125,11 @@ const JobPosting = () => {
 
   const loadJobPostings = () => {
     axios
-      .get(`http://127.0.0.1:8000/get-data`, {
+      .get(`${Config.api_endpoint}job_openings/readall`, {
+        headers: {
+          Authorization: `Bearer ${getUserToken()}`,
+        },
         params: {
-          type: "job-postings",
           page: page,
           limit: limit,
           filterby: filterBy,
@@ -116,8 +138,9 @@ const JobPosting = () => {
         },
       })
       .then((response) => {
-        setJobPostings(response.data.data);
-        setTotal(75);
+        setJobPostings(response.data.data.list);
+        setTotal(response.data.data.total);
+        setHeadTotal(response.data.data.headTotal[0]);
       })
       .catch((error) => {
         console.error("API Error:", error);
@@ -146,13 +169,15 @@ const JobPosting = () => {
     commissionValue: "",
     status: "",
     workMode: "",
-    assignRecruiter: [],
+    assignRecruiter: "",
     positionCount: "",
     openDate: "",
     closingDate: "",
     description: "",
     descriptionFile: null,
   });
+
+  const [range, setRange] = useState<[number, number]>([3, 6]);
 
   return (
     <div className="p-4">
@@ -171,7 +196,9 @@ const JobPosting = () => {
         setSearch={setSearch}
         setDeleteId={setDeleteId}
         setFormData={setFormData}
-        formData={formData}
+        headTotal={headTotal}
+        setRange={setRange}
+        // formData={formData}
       />
       <PaginationSection
         total={total}
@@ -186,6 +213,8 @@ const JobPosting = () => {
         setFormData={setFormData}
         formData={formData}
         options={options}
+        setRange={setRange}
+        range={range}
       />
       <DeleteDialog
         isDeleteOpen={isDeleteOpen}
@@ -207,8 +236,10 @@ const CardSection = ({
   setSearch,
   setDeleteId,
   setFormData,
-  formData,
-}: {
+  headTotal,
+  setRange,
+}: // formData,
+{
   data: jobPost[];
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   setIsDeleteOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -217,7 +248,14 @@ const CardSection = ({
   setSearch: React.Dispatch<React.SetStateAction<string>>;
   setDeleteId: React.Dispatch<React.SetStateAction<string>>;
   setFormData: React.Dispatch<React.SetStateAction<any>>;
-  formData: React.Dispatch<React.SetStateAction<any>>;
+  headTotal: {
+    all: number;
+    open: number;
+    closed: number;
+    hold: number;
+  };
+  setRange: React.Dispatch<React.SetStateAction<[number, number]>>;
+  // formData: React.Dispatch<React.SetStateAction<any>>;
 }) => {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState<string>("");
@@ -241,12 +279,11 @@ const CardSection = ({
     setSortBy(val);
   };
 
-  const editData = ({ id }: { id: string }) => {
+  const editData = (id: string) => {
     axios
-      .get(`http://127.0.0.1:8000/get-data`, {
-        params: {
-          type: "edit-job",
-          id: id,
+      .get(`${Config.api_endpoint}job_openings/read`, {
+        headers: {
+          Authorization: `${id}`,
         },
       })
       .then((response) => {
@@ -270,6 +307,7 @@ const CardSection = ({
           description: data.description,
           descriptionFile: data.descriptionFile,
         });
+        setRange([data.experienceMin,data.experienceMax]);
         setIsOpen(true);
       })
       .catch((error) => {
@@ -287,10 +325,26 @@ const CardSection = ({
       <div className="overflow-x-auto flex justify-between gap-4">
         <div className="flex items-center gap-7 mb-4 bg-[#F1F5F9] rounded-lg p-2">
           {[
-            { label: "All Jobs", value: 50, color: "bg-blue-400" },
-            { label: "Open", value: 40, color: "bg-green-400" },
-            { label: "Closed", value: 10, color: "bg-red-400" },
-            { label: "Hold", value: 10, color: "bg-orange-400" },
+            {
+              label: "All Jobs",
+              value: headTotal?.all ?? 0,
+              color: "bg-blue-400",
+            },
+            {
+              label: "Open",
+              value: headTotal?.open ?? 0,
+              color: "bg-green-400",
+            },
+            {
+              label: "Closed",
+              value: headTotal?.closed ?? 0,
+              color: "bg-red-400",
+            },
+            {
+              label: "Hold",
+              value: headTotal?.hold ?? 0,
+              color: "bg-orange-400",
+            },
           ].map(({ label, value, color }, idx) => (
             <div
               key={idx}
@@ -357,11 +411,6 @@ const CardSection = ({
         listType === "list" ? (
           <ClientTable
             data={data}
-            setIsOpen={setIsOpen}
-            setIsDeleteOpen={setIsDeleteOpen}
-            setDeleteId={setDeleteId}
-            setFormData={setFormData}
-            formData={formData}
             editData={editData}
             deleteData={deleteData}
           />
@@ -369,11 +418,6 @@ const CardSection = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 cursor-pointer gap-4 pt-3 pb-10">
             <JobCardSection
               data={data}
-              setIsOpen={setIsOpen}
-              setIsDeleteOpen={setIsDeleteOpen}
-              setDeleteId={setDeleteId}
-              setFormData={setFormData}
-              formData={formData}
               editData={editData}
               deleteData={deleteData}
             />
@@ -388,20 +432,19 @@ const CardSection = ({
 
 const ClientTable = ({
   data,
-  setIsOpen,
-  setIsDeleteOpen,
-  setDeleteId,
-  setFormData,
+  // setIsOpen,
+  // setIsDeleteOpen,
+  // setDeleteId,
+  // setFormData,
   editData,
   deleteData,
 }: {
   data: jobPost[];
-  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  setIsDeleteOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  setDeleteId: React.Dispatch<React.SetStateAction<string>>;
-  setFormData: React.Dispatch<React.SetStateAction<any>>;
-  editData: () => void;
-  deleteData: () => void;
+  // setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  // setIsDeleteOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  // setDeleteId: React.Dispatch<React.SetStateAction<string>>;
+  editData: (id: string) => void;
+  deleteData: (id: string) => void;
 }) => {
   return (
     <div className="overflow-x-auto rounded-lg my-3">
@@ -412,7 +455,7 @@ const ClientTable = ({
             <TableHead className={tableHeaderClass}>Job Title</TableHead>
             <TableHead className={tableHeaderClass}>Positions</TableHead>
             <TableHead className={tableHeaderClass}>Experience</TableHead>
-            <TableHead className={tableHeaderClass}>Job Type</TableHead>
+            {/* <TableHead className={tableHeaderClass}>Work Mode</TableHead> */}
             <TableHead className={tableHeaderClass}>Location</TableHead>
             <TableHead className={tableHeaderClass}>Status</TableHead>
             <TableHead className={tableHeaderClass}>Action</TableHead>
@@ -423,10 +466,18 @@ const ClientTable = ({
             <TableRow key={i}>
               <TableCell className={cellClass}>{jopPost.clientName}</TableCell>
               <TableCell className={cellClass}>{jopPost.jobTitle}</TableCell>
-              <TableCell className={cellClass}>{jopPost.positions}</TableCell>
-              <TableCell className={cellClass}>{jopPost.experience}</TableCell>
-              <TableCell className={cellClass}>{jopPost.jobType}</TableCell>
-              <TableCell className={cellClass}>{jopPost.location}</TableCell>
+              <TableCell className={cellClass}>
+                {jopPost.positionCount}
+              </TableCell>
+              <TableCell className={cellClass}>
+                {jopPost.experienceMin} - {jopPost.experienceMax} Years
+              </TableCell>
+              {/* <TableCell className={cellClass}>
+                {ucFirst(jopPost.workMode)}
+              </TableCell> */}
+              <TableCell className={cellClass}>
+                {jopPost.city},{jopPost.country}
+              </TableCell>
               <TableCell className={cellClass}>
                 <Badge
                   className={
@@ -446,8 +497,7 @@ const ClientTable = ({
                   <Button
                     variant="secondary"
                     className="cursor-pointer"
-                    size="icon"
-                    onClick={() => editData({ id: jopPost.id })}
+                    onClick={() => editData(jopPost.id)}
                   >
                     <Pencil
                       className="h-5 w-5 cursor-pointer hover:text-blue-500 transition-colors"
@@ -482,6 +532,8 @@ const AddJobPostingDialog = ({
   setFormData,
   formData,
   options,
+  setRange,
+  range,
 }: {
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -492,10 +544,12 @@ const AddJobPostingDialog = ({
     clients: { id: string; name: string }[];
     recruiters: { value: string; label: string }[];
   };
+  setRange: React.Dispatch<React.SetStateAction<[number, number]>>;
+  range: [number, number];
 }) => {
   const [errors, setErrors] = useState<any>({});
   const [submitting, setSubmitting] = useState(false);
-  const [range, setRange] = useState<[number, number]>([3, 6]);
+  
 
   const validateForm = () => {
     const newErrors: any = {};
@@ -510,7 +564,7 @@ const AddJobPostingDialog = ({
       newErrors.commissionValue = "Commission value is required";
     if (!formData.status) newErrors.status = "Status is required";
     if (!formData.workMode) newErrors.workMode = "Work mode is required";
-    if (!formData.assignRecruiter.length)
+    if (!formData.assignRecruiter)
       newErrors.assignRecruiter = "Recruiter assignment is required";
     if (!formData.positionCount)
       newErrors.positionCount = "Position count is required";
@@ -519,8 +573,8 @@ const AddJobPostingDialog = ({
       newErrors.closingDate = "Closing date is required";
     if (!formData.description)
       newErrors.description = "Description is required";
-    if (!formData.descriptionFile && !formData.id)
-      newErrors.descriptionFile = "Job description file is required";
+    // if (!formData.descriptionFile && !formData.id)
+    //   newErrors.descriptionFile = "Job description file is required";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -531,7 +585,8 @@ const AddJobPostingDialog = ({
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     >
   ) => {
-    const { name, value, type, files } = e.target;
+    const { name, value, type } = e.target as HTMLInputElement;
+    const files = (e.target as HTMLInputElement).files;
     if (type === "file") {
       setFormData((prev: any) => ({
         ...prev,
@@ -560,38 +615,46 @@ const AddJobPostingDialog = ({
           if (Array.isArray(value)) {
             data.append(key, JSON.stringify(value));
           } else {
-            data.append(key, value);
+            data.append(
+              key,
+              typeof value === "object" ? JSON.stringify(value) : String(value)
+            );
           }
         }
       });
       data.append("experienceMin", range[0].toString());
       data.append("experienceMax", range[1].toString());
-      data.append("type", "add-job-posting");
+      data.append("user_id", getUserData().id);
+      // data.append("job_description", "-");
 
-      const response = await axios.post(
-        "http://127.0.0.1:8000/post-data",
-        data,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+      const method = formData.id ? "put" : "post";
+      const endpoint = formData.id
+        ? `${Config.api_endpoint}job_openings/update`
+        : `${Config.api_endpoint}job_openings/create`;
+
+      const response = await axios[method](endpoint, data, {
+        headers: {
+          Authorization: `Bearer ${getUserToken()}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
 
       if (response.status === 200) {
         setFormData({
           id: "",
           jobTitle: "",
           clientName: "",
+          experienceMin: "",
+          experienceMax: "",
           currency: "1",
           ctc: "",
           country: "",
           city: "",
-          commissionType: "fixed",
+          commissionType: "",
           commissionValue: "",
-          status: "open",
-          workMode: "onsite",
-          assignRecruiter: [],
+          status: "",
+          workMode: "",
+          assignRecruiter: "",
           positionCount: "",
           openDate: "",
           closingDate: "",
@@ -617,8 +680,8 @@ const AddJobPostingDialog = ({
     setFormData((prev: any) => ({
       ...prev,
       assignRecruiter: selectedOptions
-        ? selectedOptions.map((opt: any) => opt.value)
-        : [],
+        ? selectedOptions.map((opt: any) => opt.value).join(",")
+        : "",
     }));
   };
 
@@ -636,7 +699,7 @@ const AddJobPostingDialog = ({
       >
         <DialogHeader>
           <DialogTitle className="my-4 text-xl text-[#0044A3] font-bold text-center">
-            Add Job Posting
+          {formData.id ? "Update a Job Opening" : "Add a New Job Opening"}
           </DialogTitle>
           <div className="mt-4 grid grid-cols-2 gap-x-8 gap-y-5">
             {/* Row 1 */}
@@ -976,7 +1039,13 @@ const AddJobPostingDialog = ({
                 disabled={submitting}
                 className="bg-[#0044A3] rounded-[3px] hover:bg-blue-950"
               >
-                {submitting ? "Saving..." : "Save"}
+                {submitting
+                ? formData.id
+                  ? "Updating..."
+                  : "Saving..."
+                : formData.id
+                ? "Update"
+                : "Save"}
               </Button>
               <Button
                 onClick={() => setIsOpen(false)}
@@ -1005,12 +1074,12 @@ const DeleteDialog = ({
 }) => {
   const deleteData = () => {
     axios
-      .post(`http://127.0.0.1:8000/post-data`, {
-        type: "delete-job",
-        id: deleteId,
+      .delete(`${Config.api_endpoint}job_openings/delete/${deleteId}`, {
+        headers: {
+          Authorization: `Bearer ${getUserToken()}`,
+        },
       })
-      .then((response) => {
-        const data = response.data.data;
+      .then(() => {
         setIsDeleteOpen(false);
         toast.success("Job posting deleted successfully");
         loadJobPostings();
@@ -1056,16 +1125,15 @@ const DeleteDialog = ({
 
 const JobCardSection = ({
   data,
-  setIsOpen,
-  setIsDeleteOpen,
+  // setIsOpen,
+  // setIsDeleteOpen,
   editData,
   deleteData,
 }: {
   data: jobPost[];
-  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  setIsDeleteOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  editData: () => void;
-  deleteData: () => void;
+  // setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  editData: (id: string) => void;
+  deleteData: (id: string) => void;
 }) => {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [clickedIndex, setClickedIndex] = useState<number | null>(null);
@@ -1110,7 +1178,7 @@ const JobCardSection = ({
                     : "bg-orange-100 text-orange-600"
                 } text-xs font-[500] px-3 py-1 rounded-md`}
               >
-                {card.experience}
+                {card.experienceMin} - {card.experienceMax} Years
               </span>
               <Menu as="div" className="relative inline-block text-left">
                 <div>
@@ -1124,7 +1192,7 @@ const JobCardSection = ({
                     <Menu.Item>
                       {({ active }) => (
                         <button
-                          onClick={() => editData({ id: card.id })}
+                          onClick={() => editData(card.id)}
                           className={`flex items-center gap-1.5 w-full px-3 py-1.5 transition-colors rounded-sm ${
                             active
                               ? "bg-indigo-50 text-indigo-600"
@@ -1161,17 +1229,19 @@ const JobCardSection = ({
                 {card.jobTitle}
               </h2>
               <p className="mt-1 text-[12px] text-[#1E293B]">
-                {card.companyName}
+                {card.clientName}
               </p>
             </div>
 
             <div className="flex justify-between items-center text-sm text-gray-600 my-4">
               <div className="flex items-center gap-1">
                 <MapPin className="w-4 h-4" />
-                <span>{card.location}</span>
+                <span>
+                  {card.city}, {card.country}
+                </span>
               </div>
               <span className="text-[12px] font-medium">
-                {ucFirst(card.jobType)}
+                {ucFirst(card.workMode)}
               </span>
             </div>
 
@@ -1182,14 +1252,17 @@ const JobCardSection = ({
                 </p>
                 <div className="flex -space-x-2">
                   <div className="flex justify-between gap-1">
-                    {card.recruiters.map((recruiter, recruiterIndex) => (
-                      <p
-                        key={recruiterIndex}
-                        className="text-indigo-500 px-2 py-0.5 rounded-2xl text-[10px] bg-indigo-100"
-                      >
-                        {recruiterIndex + 1}. {recruiter}
-                      </p>
-                    ))}
+                    {(() => {
+                      const recList = card.assignRecruiter.split(",");
+                      return recList.map((recruiter, recruiterIndex) => (
+                        <p
+                          key={recruiterIndex}
+                          className="text-indigo-500 px-2 py-0.5 rounded-2xl text-[10px] bg-indigo-100"
+                        >
+                          {recruiterIndex + 1}. {recruiter}
+                        </p>
+                      ));
+                    })()}
                   </div>
                 </div>
               </div>

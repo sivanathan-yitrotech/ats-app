@@ -36,43 +36,60 @@ export default function Login() {
       return;
     }
 
-    try {
-      setSubmitting(true);
+    // try {
+    //   setSubmitting(true);
 
-      const formData = new FormData();
-      formData.append("email", email);
-      formData.append("password", password);
-      formData.append("type", "check-login");
+    //   const formData = new FormData();
+    //   formData.append("email", email);
+    //   formData.append("password", password);
+    //   formData.append("type", "check-login");
 
-      const response = await axios.post(
-        "http://127.0.0.1:8000/post-data",
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
-      );
+    //   const response = await axios.post(
+    //     "http://127.0.0.1:8000/post-data",
+    //     formData,
+    //     {
+    //       headers: { "Content-Type": "multipart/form-data" },
+    //     }
+    //   );
 
-      if (response.data.result) {
-        const data = response.data;
-        const user = data.data;
-        const token = user.token;
+    //   if (response.data.result) {
+    //     const data = response.data;
+    //     const user = data.data;
+    //     // const token = user.token;
+    //     const token = "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJ1c2VyMTIzIiwiZW1haWwiOiJqYW5lLmRvZUBleGFtcGxlLmNvbSIsImlhdCI6MTY1MDAwMDAwMH0.";
 
-        Cookies.set("token", token, { expires: 1 });
-        Cookies.set("user", JSON.stringify(user), { expires: 1 });
-        window.location.href = "/";
-      } else {
-        setError("Invalid login credentials. Please try again.");
-      }
-    } catch (error: any) {
-      console.error("Login Error:", error);
-      if (error.response && error.response.data?.message) {
-        setError(error.response.data.message);
-      } else {
-        setError("An unexpected error occurred. Please try again later.");
-      }
-    } finally {
-      setSubmitting(false);
-    }
+    //     Cookies.set("token", token, { expires: 1 });
+    //     Cookies.set("user", JSON.stringify(user), { expires: 1 });
+    //     window.location.href = "/";
+    //   } else {
+    //     setError("Invalid login credentials. Please try again.");
+    //   }
+    // } catch (error: any) {
+    //   console.error("Login Error:", error);
+    //   if (error.response && error.response.data?.message) {
+    //     setError(error.response.data.message);
+    //   } else {
+    //     setError("An unexpected error occurred. Please try again later.");
+    //   }
+    // } finally {
+    //   setSubmitting(false);
+    // }
+
+    const user = {
+      id: "1bd9799a-0773-495e-90fa-a6635ee6b562",
+      firstName: "Sivanathan",
+      lastName: "T",
+      email: "siva@gmail.com",
+      phoneNumber: "9809876878",
+      role: "manager",
+      profile: "https://i.pravatar.cc/301",
+    };
+    const token =
+      "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJ1c2VyMTIzIiwiZW1haWwiOiJqYW5lLmRvZUBleGFtcGxlLmNvbSIsImlhdCI6MTY1MDAwMDAwMH0.";
+
+    Cookies.set("token", token, { expires: 1 });
+    Cookies.set("user", JSON.stringify(user), { expires: 1 });
+    window.location.href = "/";
   };
 
   return (

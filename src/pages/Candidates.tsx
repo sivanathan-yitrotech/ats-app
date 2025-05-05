@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Location from "@/components/ui/location";
 import { TagsInput } from "@/components/ui/taginput";
+import { getUserData, getUserToken } from "../../utils/common";
+import Config from "@/config.json";
 
 import {
   Table,
@@ -56,7 +58,7 @@ interface AssignData {
   id: string;
   candidateName: string;
   email: string;
-  mobileNumber: string;
+  contactNumber: string;
   postings: Postings[];
 }
 
@@ -66,7 +68,7 @@ const Candidates = () => {
     id: "",
     candidateName: "",
     email: "",
-    mobileNumber: "",
+    contactNumber: "",
     postings: [],
   });
   const [isOpen, setIsOpen] = useState(false);
@@ -82,11 +84,31 @@ const Candidates = () => {
     Partial<Omit<CandidateFormData, "profile"> & { profile: string | null }>
   >({});
 
+  interface CandidateFormData {
+    id?: string;
+    candidateName: string;
+    contactNumber: string;
+    email: string;
+    jobRole: string;
+    years: string;
+    months: string;
+    country: string;
+    city: string;
+    joiningDate: string;
+    ctc_symble: string;
+    ctc: string;
+    workMode: string;
+    skills: string[];
+    resume: File | null;
+  }
+
   const loadCandidates = () => {
     axios
-      .get(`http://127.0.0.1:8000/get-data`, {
+      .get(`${Config.api_endpoint}candidates/readall`, {
+        headers: {
+          Authorization: `Bearer ${getUserToken()}`,
+        },
         params: {
-          type: "candidates-list",
           page: page,
           limit: limit,
           sortby: sortBy,
@@ -106,27 +128,6 @@ const Candidates = () => {
     loadCandidates();
   }, [sortBy, search, page]);
 
-  interface CandidateFormData {
-    id?: string;
-    candidateName: string;
-    contactNumber: string;
-    email: string;
-    jobRole: string;
-    years: string;
-    months: string;
-    country: string;
-    city: string;
-    joiningDate: string;
-    ctc: string;
-    skills: [];
-    resume: File | null;
-  }
-
-  type FormData = CandidateFormData & {
-    id: string;
-    candidateName: string; // Ensure candidateName is included in FormData
-  };
-
   const [formData, setFormData] = useState<CandidateFormData>({
     id: "",
     candidateName: "",
@@ -138,7 +139,9 @@ const Candidates = () => {
     country: "",
     city: "",
     joiningDate: "",
+    ctc_symble: "",
     ctc: "",
+    workMode: "onsite",
     skills: [],
     resume: null,
   });
@@ -162,9 +165,7 @@ const Candidates = () => {
         setIsDeleteOpen={setIsDeleteOpen}
         setSortBy={setSortBy}
         setSearch={setSearch}
-        formData={formData}
         setFormData={setFormData}
-        errors={errors}
         setErrors={setErrors}
         setDeleteId={setDeleteId}
         setAssignOpen={setAssignOpen}
@@ -204,6 +205,23 @@ const Candidates = () => {
   );
 };
 
+interface CandidateFormData {
+  id?: string;
+  candidateName: string;
+  contactNumber: string;
+  email: string;
+  jobRole: string;
+  years: string;
+  months: string;
+  country: string;
+  city: string;
+  joiningDate: string;
+  ctc_symble: string;
+  ctc: string;
+  skills: string[];
+  resume: File | null;
+}
+
 const CardSection = ({
   data,
   setIsOpen,
@@ -222,7 +240,7 @@ const CardSection = ({
   setIsDeleteOpen: React.Dispatch<React.SetStateAction<boolean>>;
   setSortBy: React.Dispatch<React.SetStateAction<string>>;
   setSearch: React.Dispatch<React.SetStateAction<string>>;
-  setFormData: React.Dispatch<React.SetStateAction<FormData>>;
+  setFormData: React.Dispatch<React.SetStateAction<CandidateFormData>>;
   setErrors: React.Dispatch<React.SetStateAction<object>>;
   setDeleteId: React.Dispatch<React.SetStateAction<string>>;
   setAssignOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -283,11 +301,13 @@ const CardSection = ({
                   country: "",
                   city: "",
                   joiningDate: "",
+                  ctc_symble: "",
                   ctc: "",
+                  workMode: "onsite",
                   skills: [],
                   resume: null,
                 }),
-                setErrors({});
+                setErrors({ profile: null });
             }}
           >
             <Plus className="mr-2 h-4 w-4" /> Add Candidate
@@ -327,7 +347,7 @@ const CandidateTable = ({
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   setIsDeleteOpen: React.Dispatch<React.SetStateAction<boolean>>;
   setDeleteId: React.Dispatch<React.SetStateAction<string>>;
-  setFormData: React.Dispatch<React.SetStateAction<FormData>>;
+  setFormData: React.Dispatch<React.SetStateAction<CandidateFormData>>;
   setAssignOpen: React.Dispatch<React.SetStateAction<boolean>>;
   setAssignData: React.Dispatch<React.SetStateAction<AssignData>>;
   loadCandidates: () => void;
@@ -348,7 +368,7 @@ const CandidateTable = ({
           candidateName: data.candidateName,
           jobRole: data.jobRole,
           email: data.email,
-          mobileNumber: data.contactNumber,
+          contactNumber: data.contactNumber,
           years: data.exp_years,
           months: data.exp_months,
           country: data.loc_country,
@@ -356,6 +376,7 @@ const CandidateTable = ({
           joiningDate: data.joinDate,
           ctc_symble: data.exp_ctc_symble,
           ctc: data.exp_ctc_value,
+          workMode: data.workMode,
           skills: data.skills,
           resume: null,
         });
@@ -380,7 +401,7 @@ const CandidateTable = ({
           id: data.id,
           candidateName: data.candidateName,
           email: data.email,
-          mobileNumber: data.mobileNumber,
+          contactNumber: data.contactNumber,
           postings: data.postings,
         });
         setAssignOpen(true);
@@ -396,7 +417,7 @@ const CandidateTable = ({
         type: "un-assign",
         id: id,
       })
-      .then((response) => {
+      .then(() => {
         toast.success("Position un-assigned successfully");
         loadCandidates();
       })
@@ -479,6 +500,39 @@ const CandidateTable = ({
   );
 };
 
+interface CandidateFormData {
+  id?: string;
+  candidateName: string;
+  contactNumber: string;
+  email: string;
+  jobRole: string;
+  years: string;
+  months: string;
+  country: string;
+  city: string;
+  joiningDate: string;
+  ctc: string;
+  workMode: string;
+  skills: string[];
+  resume: File | null;
+}
+
+interface CandidateFormDataErrors {
+  id?: string;
+  candidateName: string;
+  contactNumber: string;
+  email: string;
+  jobRole: string;
+  years: string;
+  months: string;
+  country: string;
+  city: string;
+  joiningDate: string;
+  ctc: string;
+  skills: string;
+  resume: string;
+}
+
 const AddCandidateDialog = ({
   isOpen,
   setIsOpen,
@@ -491,9 +545,11 @@ const AddCandidateDialog = ({
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   loadCandidates: () => void;
-  formData: FormData;
-  setFormData: React.Dispatch<React.SetStateAction<FormData>>;
-  errors: Partial<Omit<FormData, "profile"> & { profile: string | null }>;
+  formData: CandidateFormData;
+  setFormData: React.Dispatch<React.SetStateAction<CandidateFormData>>;
+  errors: Partial<
+    Omit<CandidateFormData, "profile"> & { profile: string | null }
+  >;
   setErrors: React.Dispatch<
     React.SetStateAction<
       Partial<Omit<FormData, "profile"> & { profile: string | null }>
@@ -503,7 +559,9 @@ const AddCandidateDialog = ({
   const [submitting, setSubmitting] = useState(false);
 
   const validateForm = (): boolean => {
-    type CandidateErrors = Partial<Record<keyof FormData, string>>;
+    type CandidateErrors = Partial<
+      Omit<CandidateFormDataErrors, "profile"> & { profile: string | null }
+    >;
     const newErrors: CandidateErrors = {};
 
     const isEmpty = (value: any) => !value || value.toString().trim() === "";
@@ -515,10 +573,10 @@ const AddCandidateDialog = ({
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
       newErrors.email = "Invalid email format";
 
-    if (isEmpty(formData.mobileNumber))
-      newErrors.mobileNumber = "Mobile number is required";
-    else if (!/^\d{10,15}$/.test(formData.mobileNumber))
-      newErrors.mobileNumber = "Invalid mobile number";
+    if (isEmpty(formData.contactNumber))
+      newErrors.contactNumber = "Mobile number is required";
+    else if (!/^\d{10,15}$/.test(formData.contactNumber))
+      newErrors.contactNumber = "Invalid mobile number";
 
     if (isEmpty(formData.years))
       newErrors.years = "Experience (years) is required";
@@ -576,13 +634,14 @@ const AddCandidateDialog = ({
           candidateName: "",
           jobRole: "",
           email: "",
-          mobileNumber: "",
+          contactNumber: "",
           years: "",
           months: "",
           country: "",
           city: "",
           joiningDate: "",
           ctc: "",
+          workMode: "",
           skills: [],
           resume: null,
           ctc_symble: "1",
@@ -597,6 +656,13 @@ const AddCandidateDialog = ({
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleSelectChange = (name: string, value: any) => {
+    setFormData((prev: any) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   return (
@@ -637,10 +703,10 @@ const AddCandidateDialog = ({
             />
             <InputField
               label="Mobile Number"
-              name="mobileNumber"
-              value={formData.mobileNumber}
+              name="contactNumber"
+              value={formData.contactNumber}
               onChange={handleChange}
-              error={errors.mobileNumber}
+              error={errors.contactNumber}
               placeholder="Enter the Mobile Number"
             />
 
@@ -709,10 +775,13 @@ const AddCandidateDialog = ({
                 initialCountry={formData.country}
                 initialCity={formData.city}
                 onCountryChange={(country: string) =>
-                  setFormData((prev: FormData) => ({ ...prev, country }))
+                  setFormData((prev: CandidateFormData) => ({
+                    ...prev,
+                    country,
+                  }))
                 }
                 onCityChange={(city: string) =>
-                  setFormData((prev: FormData) => ({ ...prev, city }))
+                  setFormData((prev: CandidateFormData) => ({ ...prev, city }))
                 }
               />
             </div>
@@ -773,6 +842,32 @@ const AddCandidateDialog = ({
               </div>
             </div>
 
+            <div className="flex items-center gap-4">
+              <Label className="text-[#1E293B] w-[30%]">Work Mode</Label>
+              <div className="w-[70%] flex flex-col gap-1">
+                <Select
+                  name="workMode"
+                  defaultValue=""
+                  value={formData.workMode}
+                  onValueChange={(val) => handleSelectChange("workMode", val)}
+                >
+                  <SelectTrigger className="w-full placeholder:text-[13px] px-4 py-5">
+                    <SelectValue placeholder="Select Work Mode" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="onsite">On-Site</SelectItem>
+                    <SelectItem value="hybrid">Hybrid</SelectItem>
+                    <SelectItem value="remote">Remote</SelectItem>
+                  </SelectContent>
+                </Select>
+                {errors.workMode && (
+                  <p className="text-red-500 text-xs mt-1 ml-2">
+                    {errors.workMode}
+                  </p>
+                )}
+              </div>
+            </div>
+
             {/* Skills */}
             <div className="flex items-center gap-4">
               <Label className="text-[#1E293B] w-[30%]">Skills</Label>
@@ -805,7 +900,7 @@ const AddCandidateDialog = ({
                 />
                 {errors.resume && (
                   <p className="text-red-500 text-xs mt-1 ml-2">
-                    {errors.resume}
+                    {typeof errors.resume === "string" && errors.resume}
                   </p>
                 )}
               </div>
@@ -869,7 +964,7 @@ const AssignDialog = ({
           id: "",
           candidateName: "",
           email: "",
-          mobileNumber: "",
+          contactNumber: "",
           postings: [],
         });
         setAssignOpen(false);
@@ -902,7 +997,7 @@ const AssignDialog = ({
                 Email / Mobile
               </Label>
               <span className="w-[70%] text-[#4B5563] text-sm">
-                {assignData.email} / {assignData.mobileNumber}
+                {assignData.email} / {assignData.contactNumber}
               </span>
             </div>
 
@@ -980,8 +1075,7 @@ const DeleteDialog = ({
         type: "delete-candidate",
         id: deleteId,
       })
-      .then((response) => {
-        const data = response.data.data;
+      .then(() => {
         setIsDeleteOpen(false);
         toast.success("Candidate deleted successfully");
         loadCandidates();

@@ -70,7 +70,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       { icon: Users, text: "Client Management", url: "/client" },
       { icon: BriefcaseBusiness, text: "Job Postings", url: "/job-posting" },
       { icon: FileUser, text: "Manage Candidates", url: "/candidates" },
-      { icon: FileUser, text: "Candidates Status", url: "/candidates-status" },
+      { icon: FileUser, text: "Position Status", url: "/candidates-status" },
       { icon: CalendarCheck, text: "Manage Interviews", url: "/interviews" },
       { icon: Receipt, text: "Invoices", url: "/invoices" },
     ],
@@ -82,7 +82,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         url: "/assigned-positions",
       },
       { icon: FileUser, text: "Manage Candidates", url: "/candidates" },
-      { icon: FileUser, text: "Candidates Status", url: "/candidates-status" },
+      { icon: FileUser, text: "Position Status", url: "/candidates-status" },
       { icon: CalendarCheck, text: "Manage Interviews", url: "/interviews" },
     ],
   };

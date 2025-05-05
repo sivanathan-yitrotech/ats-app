@@ -16,6 +16,7 @@ interface JobCardData {
   company: string;
   mode: string;
   interviewers: string[];
+  interview_date: string; // Added property
 }
 
 const Interviews = () => {
@@ -41,7 +42,7 @@ const Interviews = () => {
       })
       .then((response) => {
         setInterviews(response.data.data);
-        setTotal("55");
+        setTotal(55);
       })
       .catch((error) => {
         console.error("API Error:", error.response?.data || error.message);
@@ -156,7 +157,7 @@ const CardSection = ({
       </div>
 
       {data.length === 0 ? (
-        <NoData/>
+        <NoData />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 cursor-pointer gap-4 pt-3 pb-10">
           <JobCardSection data={data} />
@@ -198,18 +199,18 @@ const JobCardSection = ({ data }: { data: JobCardData[] }) => {
                 {card.status}
               </span>
               <div className="flex flex-col gap-1">
-              <span
-                className={`${
-                  card.stage === "L1"
-                    ? "bg-blue-50 text-blue-600"
-                    : card.stage === "L2"
-                    ? "bg-indigo-50 text-indigo-600"
-                    : "bg-violet-100 text-violet-600"
-                } text-xs font-[500] px-3 py-1 rounded-md`}
-              >
-                {card.stage}
-              </span>
-              <span className="text-[10px] font-medium">{card.mode}</span>
+                <span
+                  className={`${
+                    card.stage === "L1"
+                      ? "bg-blue-50 text-blue-600"
+                      : card.stage === "L2"
+                      ? "bg-indigo-50 text-indigo-600"
+                      : "bg-violet-100 text-violet-600"
+                  } text-xs font-[500] px-3 py-1 rounded-md`}
+                >
+                  {card.stage}
+                </span>
+                <span className="text-[10px] font-medium">{card.mode}</span>
               </div>
             </div>
 
@@ -229,13 +230,17 @@ const JobCardSection = ({ data }: { data: JobCardData[] }) => {
                   <p className="text-xs text-gray-500 mb-1">Interviewers</p>
                   <div className="flex flex-col ml-1">
                     {card.interviewers.map((recruiter, recruiterIndex) => (
-                      <p className="text-[10px] text-gray-500">{recruiterIndex+1}. {recruiter}</p>
+                      <p className="text-[10px] text-gray-500">
+                        {recruiterIndex + 1}. {recruiter}
+                      </p>
                     ))}
                   </div>
                 </div>
                 <div className="flex flex-col">
                   <p className="text-xs text-gray-500 mb-1">Interview On</p>
-                  <p className="text-[10px] text-gray-500">{card.interview_date}</p>
+                  <p className="text-[10px] text-gray-500">
+                    {card.interview_date}
+                  </p>
                 </div>
               </div>
             </div>

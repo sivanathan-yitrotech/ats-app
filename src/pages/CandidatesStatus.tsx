@@ -62,18 +62,18 @@ const CandidateStatus = () => {
   const [editId, setEditId] = useState("");
 
   const [formData, setFormData] = useState<{
-    id: string;
-    offeredDate: string;
-    onboardDate: string;
-    interviewDate: string;
-    interviewTime: string;
-    interviewers: string[];
-    mode: string;
-    remarks: string;
-    communication: number;
-    technical: number;
-    overall: number;
-    isFeeded: boolean;
+    id: string; // Added id property
+    offeredDate?: string;
+    onboardDate?: string;
+    interviewDate?: string;
+    interviewTime?: string;
+    interviewers?: string[];
+    mode?: string;
+    remarks?: string;
+    communication?: number;
+    technical?: number;
+    overall?: number;
+    isFeeded?: boolean;
   }>({
     id: "",
     offeredDate: "",
@@ -147,10 +147,10 @@ const CandidateStatus = () => {
   return (
     <div className="p-4">
       <div className="flex flex-col items-center mb-6">
-        <h1 className="text-lg font-bold text-[#475569]">Candidate Status</h1>
+        <h1 className="text-lg font-bold text-[#475569]">Position Status</h1>
         <p className="text-sm text-[#475569] mt-2 text-center">
-          Visually manage candidates through every hiring stage — with a clear,
-          drag-and-drop flow.
+          Easily manage candidates at every stage of the hiring process with a
+          clear, drag-and-drop workflow.
         </p>
       </div>
       <CardSection
@@ -428,6 +428,8 @@ const CandidateCard = ({
   formData: any;
   setFormData: any;
 }) => {
+  console.log(setEditId);
+  console.log(formData);
   const editData = (id: string) => {
     axios
       .get("http://127.0.0.1:8000/get-data", {
@@ -542,11 +544,12 @@ interface UpdateStatusDialogProps {
   getData: any;
   status: string;
   formData: {
+    id: string;
     offeredDate?: string;
     onboardDate?: string;
     interviewDate?: string;
     interviewTime?: string;
-    interviewers?: string;
+    interviewers?: string[];
     mode?: string;
     remarks?: string;
     communication?: number;
@@ -685,6 +688,7 @@ const UpdateStatusDialog: React.FC<UpdateStatusDialogProps> = ({
 
       if (response.status === 200) {
         setFormData({
+          id: "",
           offeredDate: "",
           onboardDate: "",
           interviewDate: "",
@@ -993,7 +997,7 @@ const UpdateStatusDialog: React.FC<UpdateStatusDialogProps> = ({
                       <div className="flex items-center gap-4">
                         <Label className="w-[30%]">Communication Skill</Label>
                         <Rating
-                          value={formData.communication}
+                          value={formData.communication ?? 0}
                           onChange={(value) =>
                             setFormData((prev: typeof formData) => ({
                               ...prev,
@@ -1013,7 +1017,7 @@ const UpdateStatusDialog: React.FC<UpdateStatusDialogProps> = ({
                       <div className="flex items-center gap-4">
                         <Label className="w-[30%]">Technical Skill</Label>
                         <Rating
-                          value={formData.technical}
+                          value={formData.technical ?? 0}
                           onChange={(value) =>
                             setFormData((prev: typeof formData) => ({
                               ...prev,
@@ -1033,7 +1037,7 @@ const UpdateStatusDialog: React.FC<UpdateStatusDialogProps> = ({
                       <div className="flex items-center gap-4">
                         <Label className="w-[30%]">Overall Ratings</Label>
                         <Rating
-                          value={formData.overall}
+                          value={formData.overall ?? 0}
                           onChange={(value) =>
                             setFormData((prev: typeof formData) => ({
                               ...prev,
@@ -1201,7 +1205,7 @@ const InvoiceDialog = ({
           </Label>
           <div className="w-[70%]">
             <div className="flex gap-1">
-              {invoiceData.recruiters.map((rec, ind) => (
+              {invoiceData.recruiters.map((rec: string, ind: number) => (
                 <span
                   key={ind}
                   className="bg-blue-300 text-[#4B5563] text-[12px] px-2 py-1 rounded-xl"

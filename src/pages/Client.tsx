@@ -9,6 +9,10 @@ import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
 import { Plus, Menu, Pencil, Trash2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { getUserData, getUserToken } from "../../utils/common";
+import { Label } from "@/components/ui/label";
+import Location from "@/components/ui/location";
+import Config from "@/config.json";
 import {
   Table,
   TableBody,
@@ -41,11 +45,20 @@ const Client = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [filterBy, setFilterBy] = useState("0");
-  const [sortBy, setSortBy] = useState("");
+  const [sortBy, setSortBy] = useState("newest");
   const [search, setSearch] = useState("");
   const limit = 20;
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [headTotal, setHeadTotal] = useState<{
+    all: number;
+    active: number;
+    inactive: number;
+  }>({
+    all: 0,
+    active: 0,
+    inactive: 0,
+  });
 
   const [errors, setErrors] = useState<
     Partial<Omit<typeof formData, "profile"> & { profile: string | null }>
@@ -53,9 +66,11 @@ const Client = () => {
 
   const loadClients = () => {
     axios
-      .get(`http://127.0.0.1:8000/get-data`, {
+      .get(`${Config.api_endpoint}client/readall`, {
+        headers: {
+          Authorization: `Bearer ${getUserToken()}`,
+        },
         params: {
-          type: "clients-list",
           page: page,
           limit: limit,
           filterby: filterBy,
@@ -64,8 +79,9 @@ const Client = () => {
         },
       })
       .then((response) => {
-        setClients(response.data.data);
-        setTotal(75);
+        setClients(response.data.data.list);
+        setTotal(response.data.data.total);
+        setHeadTotal(response.data.data.headTotal[0]);
       })
       .catch((error) => {
         console.error("API Error:", error);
@@ -82,6 +98,8 @@ const Client = () => {
     clientCompany: "",
     contactNumber: "",
     contactEmail: "",
+    country: "",
+    city: "",
   });
 
   const [deleteId, setDeleteId] = useState("0");
@@ -101,11 +119,10 @@ const Client = () => {
         setFilterBy={setFilterBy}
         setSortBy={setSortBy}
         setSearch={setSearch}
-        formData={formData}
         setFormData={setFormData}
-        errors={errors}
         setErrors={setErrors}
         setDeleteId={setDeleteId}
+        headTotal={headTotal}
       />
       <PaginationSection
         total={total}
@@ -143,6 +160,7 @@ const CardSection = ({
   setFormData,
   setErrors,
   setDeleteId,
+  headTotal,
 }: {
   data: Client[];
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -150,9 +168,14 @@ const CardSection = ({
   setFilterBy: React.Dispatch<React.SetStateAction<string>>;
   setSortBy: React.Dispatch<React.SetStateAction<string>>;
   setSearch: React.Dispatch<React.SetStateAction<string>>;
-  setFormData: React.Dispatch<React.SetStateAction<FormData>>;
+  setFormData: React.Dispatch<React.SetStateAction<any>>;
   setErrors: React.Dispatch<React.SetStateAction<object>>;
   setDeleteId: React.Dispatch<React.SetStateAction<string>>;
+  headTotal: {
+    all: number;
+    active: number;
+    inactive: number;
+  };
 }) => {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState<string>("");
@@ -180,9 +203,21 @@ const CardSection = ({
       <div className="overflow-x-auto flex justify-between gap-4">
         <div className="flex items-center gap-7 mb-4 bg-[#F1F5F9] rounded-lg p-2">
           {[
-            { label: "All Clients", value: 50, color: "bg-blue-400" },
-            { label: "Active", value: 40, color: "bg-green-400" },
-            { label: "Inactive", value: 10, color: "bg-red-400" },
+            {
+              label: "All Clients",
+              value: headTotal?.all ?? 0,
+              color: "bg-blue-400",
+            },
+            {
+              label: "Active",
+              value: headTotal?.active ?? 0,
+              color: "bg-green-400",
+            },
+            {
+              label: "Inactive",
+              value: headTotal?.inactive ?? 0,
+              color: "bg-red-400",
+            },
           ].map(({ label, value, color }, idx) => (
             <div
               key={idx}
@@ -221,7 +256,15 @@ const CardSection = ({
             variant="secondary"
             className="ml-4 cursor-pointer"
             onClick={() => {
-              setIsOpen(true), setFormData({}), setErrors({});
+              setIsOpen(true), setFormData({
+                id: "",
+                clientName: "",
+                clientCompany: "",
+                contactNumber: "",
+                contactEmail: "",
+                country: "",
+                city: "",
+              }), setErrors({});
             }}
           >
             <Plus className="mr-2 h-4 w-4" /> Add Client
@@ -254,25 +297,25 @@ const ClientTable = ({
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   setIsDeleteOpen: React.Dispatch<React.SetStateAction<boolean>>;
   setDeleteId: React.Dispatch<React.SetStateAction<string>>;
-  setFormData: React.Dispatch<React.SetStateAction<FormData>>;
+  setFormData: React.Dispatch<React.SetStateAction<any>>;
 }) => {
-  const editData = ({ id }: { id: string }) => {
+  const editData = (id: string) => {
     axios
-      .get(`http://127.0.0.1:8000/get-data`, {
-        params: {
-          type: "edit-client",
-          id: id,
+      .get(`${Config.api_endpoint}client/read`, {
+        headers: {
+          Authorization: `${id}`,
         },
       })
       .then((response) => {
         const data = response.data.data;
-        console.log(data);
         setFormData({
           id: data.id,
           clientName: data.clientName,
           clientCompany: data.companyName,
           contactNumber: data.contactNumber,
           contactEmail: data.email,
+          country: data.country,
+          city: data.city,
         });
         setIsOpen(true);
       })
@@ -391,18 +434,24 @@ const AddClientDialog = ({
       const data = new FormData();
       Object.entries(formData).forEach(([key, value]) => {
         if (value !== null && value !== undefined) {
-          data.append(key, value);
+          data.append(key, String(value));
         }
       });
+      if (!formData.id) {
+        data.append("user_id", getUserData().id);
+      }
 
-      data.append("type", "add-client");
+      const method = formData.id ? "put" : "post";
+      const endpoint = formData.id
+        ? `${Config.api_endpoint}client/update`
+        : `${Config.api_endpoint}client/create`;
 
-      await axios
-        .post("http://127.0.0.1:8000/post-data", data, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        })
+      await axios[method](endpoint, data, {
+        headers: {
+          Authorization: `Bearer ${getUserToken()}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      })
         .then((response) => {
           if (response.status === 200) {
             setFormData({
@@ -410,6 +459,8 @@ const AddClientDialog = ({
               clientCompany: "",
               contactNumber: "",
               contactEmail: "",
+              country: "",
+              city: "",
             });
             setErrors({});
             setIsOpen(false);
@@ -434,7 +485,7 @@ const AddClientDialog = ({
       <DialogContent className="max-w-[80vw] md:max-w-[60vw] overflow-hidden rounded-lg">
         <DialogHeader>
           <DialogTitle className="my-4 text-xl text-[#0044A3] font-bold text-center">
-            Add Client
+            {formData.id ? "Update a Client" : "Add a New Client"}
           </DialogTitle>
         </DialogHeader>
         <div className="mt-4 flex flex-col gap-6">
@@ -476,13 +527,33 @@ const AddClientDialog = ({
             max="250"
             placeholder="Enter the Contact Email"
           />
+          <div className="flex items-center gap-4">
+            <Label className="text-[#1E293B] w-[30%]">Location</Label>
+            <Location
+              className="w-[70%]"
+              initialCountry={formData.country}
+              initialCity={formData.city}
+              onCountryChange={(country: string) =>
+                setFormData((prev: typeof formData) => ({ ...prev, country }))
+              }
+              onCityChange={(city: string) =>
+                setFormData((prev: typeof formData) => ({ ...prev, city }))
+              }
+            />
+          </div>
           <div className="flex justify-center gap-6 my-6">
             <Button
               onClick={handleSubmit}
               disabled={submitting}
               className="bg-[#0044A3] rounded-[3px] hover:bg-blue-950"
             >
-              {submitting ? "Saving..." : "Save"}
+              {submitting
+                ? formData.id
+                  ? "Updating..."
+                  : "Saving..."
+                : formData.id
+                ? "Update"
+                : "Save"}
             </Button>
             <Button
               onClick={() => setIsOpen(false)}
@@ -510,12 +581,12 @@ const DeleteDialog = ({
 }) => {
   const deleteData = () => {
     axios
-      .post(`http://127.0.0.1:8000/post-data`, {
-        type: "delete-client",
-        id: deleteId,
+      .delete(`${Config.api_endpoint}client/delete/${deleteId}`, {
+        headers: {
+          Authorization: `Bearer ${getUserToken()}`,
+        },
       })
-      .then((response) => {
-        const data = response.data.data;
+      .then(() => {
         setIsDeleteOpen(false);
         toast.success("Client deleted successfully");
         loadClients();

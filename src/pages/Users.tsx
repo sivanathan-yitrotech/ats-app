@@ -4,26 +4,39 @@ import PaginationSection from "@/components/ui/page";
 import NoData from "@/components/ui/nodata";
 import SortBy from "@/components/ui/sortby";
 import InputField from "@/components/ui/inputfield";
+import { getUserToken, ucFirst } from "../../utils/common";
+import Config from "@/config.json";
 import axios from "axios";
-import {
-  Plus,
-  Menu as MenuIcon,
-  EllipsisVertical,
-  Pencil,
-  Trash,
-} from "lucide-react";
+import { Plus, Menu as MenuIcon, Pencil, Trash } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
-import { Menu } from "@headlessui/react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const tableHeaderClass = "text-[#0044A3] font-semibold text-sm py-3 px-6";
+const cellClass = "text-sm font-medium text-gray-700 py-3 px-6";
 
 interface User {
   id: string;
@@ -32,6 +45,7 @@ interface User {
   email: string;
   phoneNumber: string;
   role: string;
+  last_updated: string;
 }
 
 const Users = () => {
@@ -45,15 +59,37 @@ const Users = () => {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
 
-  const [errors, setErrors] = useState<
-    Partial<Omit<typeof formData, "profile"> & { profile: string | null }>
-  >({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [options, setOptions] = useState<Array<{ id: string; name: string }>>(
+    []
+  );
+
+  const loadOptions = () => {
+    axios
+      .get(`${Config.api_endpoint}fetch_data/fetch/client_list`, {
+        headers: {
+          Authorization: `Bearer ${getUserToken()}`,
+        },
+      })
+      .then((response) => {
+        setOptions(response.data.managers);
+      })
+      .catch((error) => {
+        console.error("API Error:", error);
+      });
+  };
+
+  useEffect(() => {
+    loadOptions();
+  }, []);
 
   const loadUsers = () => {
     axios
-      .get(`http://127.0.0.1:8000/get-data`, {
+      .get(`${Config.api_endpoint}user/readall`, {
+        headers: {
+          Authorization: `Bearer ${getUserToken()}`,
+        },
         params: {
-          type: "users-list",
           page: page,
           limit: limit,
           filterby: filterBy,
@@ -74,7 +110,20 @@ const Users = () => {
     loadUsers();
   }, [filterBy, sortBy, search, page]);
 
-  const [formData, setFormData] = useState({
+  interface UserFormData {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone_number: string;
+    password: string;
+    confirm_password: string;
+    role: string;
+    manager: string;
+    last_updated: string;
+  }
+
+  const [formData, setFormData] = useState<UserFormData>({
     id: "",
     firstName: "",
     lastName: "",
@@ -83,7 +132,8 @@ const Users = () => {
     password: "",
     confirm_password: "",
     role: "",
-    profile: null as File | null,
+    manager: "",
+    last_updated: "",
   });
 
   const [deleteId, setDeleteId] = useState("0");
@@ -97,9 +147,7 @@ const Users = () => {
         setFilterBy={setFilterBy}
         setSortBy={setSortBy}
         setSearch={setSearch}
-        formData={formData}
         setFormData={setFormData}
-        errors={errors}
         setErrors={setErrors}
         setDeleteId={setDeleteId}
       />
@@ -117,6 +165,7 @@ const Users = () => {
         setFormData={setFormData}
         errors={errors}
         setErrors={setErrors}
+        options={options as { id: string; name: string }[]}
       />
       <DeleteDialog
         isDeleteOpen={isDeleteOpen}
@@ -129,6 +178,19 @@ const Users = () => {
   );
 };
 
+interface UserFormData {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone_number: string;
+  password: string;
+  confirm_password: string;
+  role: string;
+  manager: string;
+  last_updated: string;
+}
+
 const CardSection = ({
   data,
   setIsOpen,
@@ -136,9 +198,7 @@ const CardSection = ({
   setFilterBy,
   setSortBy,
   setSearch,
-  formData,
   setFormData,
-  errors,
   setErrors,
   setDeleteId,
 }: {
@@ -148,17 +208,13 @@ const CardSection = ({
   setFilterBy: React.Dispatch<React.SetStateAction<string>>;
   setSortBy: React.Dispatch<React.SetStateAction<string>>;
   setSearch: React.Dispatch<React.SetStateAction<string>>;
-  formData: React.Dispatch<React.SetStateAction<FormData>>;
-  setFormData: React.Dispatch<React.SetStateAction<FormData>>;
-  errors: React.Dispatch<React.SetStateAction<object>>;
-  setErrors: React.Dispatch<React.SetStateAction<object>>;
+  setFormData: React.Dispatch<React.SetStateAction<UserFormData>>;
+  setErrors: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   setDeleteId: React.Dispatch<React.SetStateAction<string>>;
 }) => {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState<string>("");
   const [active, setActive] = useState("0");
-
-  console.log(formData);
 
   const sortOptions = [
     { value: "a-z", label: "A-Z" },
@@ -216,7 +272,20 @@ const CardSection = ({
             variant="secondary"
             className="ml-4 cursor-pointer"
             onClick={() => {
-              setIsOpen(true), setFormData({}), setErrors({});
+              setIsOpen(true),
+                setFormData({
+                  id: "",
+                  firstName: "",
+                  lastName: "",
+                  email: "",
+                  phone_number: "",
+                  password: "",
+                  confirm_password: "",
+                  role: "",
+                  manager: "",
+                  last_updated: "",
+                }),
+                setErrors({});
             }}
           >
             <Plus className="mr-2 h-4 w-4" /> Add User
@@ -225,18 +294,13 @@ const CardSection = ({
       </div>
 
       {data.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4 my-7">
-          {data.map((user, index) => (
-            <UsersCard
-              key={index}
-              user={user}
-              setIsOpen={setIsOpen}
-              setIsDeleteOpen={setIsDeleteOpen}
-              setFormData={setFormData}
-              setDeleteId={setDeleteId}
-            />
-          ))}
-        </div>
+        <UsersTable
+          user={data}
+          setIsOpen={setIsOpen}
+          setIsDeleteOpen={setIsDeleteOpen}
+          setFormData={setFormData}
+          setDeleteId={setDeleteId}
+        />
       ) : (
         <NoData />
       )}
@@ -244,30 +308,29 @@ const CardSection = ({
   );
 };
 
-const UsersCard = ({
+const UsersTable = ({
   user,
   setIsOpen,
   setIsDeleteOpen,
   setFormData,
   setDeleteId,
 }: {
-  user: User;
+  user: User[];
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   setIsDeleteOpen: React.Dispatch<React.SetStateAction<boolean>>;
-  setFormData: React.Dispatch<React.SetStateAction<FormData>>;
+  setFormData: React.Dispatch<React.SetStateAction<UserFormData>>;
   setDeleteId: React.Dispatch<React.SetStateAction<string>>;
 }) => {
-  const editData = () => {
+  const editData = (userId: string) => {
     axios
-      .get(`http://127.0.0.1:8000/get-data`, {
-        params: {
-          type: "edit-user",
-          id: user.id,
+      .get(`${Config.api_endpoint}user/read`, {
+        headers: {
+          Authorization: `${userId}`,
+          // id: userId,
         },
       })
       .then((response) => {
         const data = response.data.data;
-        console.log(data);
         setFormData({
           id: data.id,
           firstName: data.firstName,
@@ -276,8 +339,9 @@ const UsersCard = ({
           phone_number: data.phoneNumber,
           password: "",
           confirm_password: "",
+          manager: "",
           role: data.role,
-          profile: data.profile,
+          last_updated: data.last_updated,
         });
         setIsOpen(true);
       })
@@ -292,100 +356,76 @@ const UsersCard = ({
   };
 
   return (
-    <div className="transition-all transform duration-300 hover:scale-105 outfit-regular w-full rounded-2xl bg-gradient-to-r from-zinc-50 to-neutral-100 border border-gray-200 p-4 shadow-lg hover:shadow-2xl flex flex-col space-y-4 font-[Outfit]">
-      <div className="flex justify-between items-center">
-        <p className="text-[12px] font-semibold text-gray-900">
-          {user.firstName} {user.lastName}
-        </p>
-        <div className="flex flex-row-reverse items-center gap-2 text-[13px] text-gray-600">
-          <ActionSection
-            id={user.id}
-            editData={editData}
-            deleteData={deleteData}
-            setDeleteId={setDeleteId}
-          />
-          <Badge
-            className={`text-[10px] text-black px-2 py-1 rounded-full ${
-              user.role === "manager" ? "bg-lime-200" : "bg-teal-200"
-            }`}
-          >
-            {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-          </Badge>
-        </div>
-      </div>
-
-      <div className="flex justify-between text-gray-600">
-        <div className="flex flex-col gap-2">
-          <p className="text-[12px]">{user.email}</p>
-          <p className="text-[12px]">{user.phoneNumber}</p>
-        </div>
-        {user.role === "recruiter" && (
-          <div>
-            <p className="text-[11px] text-gray-500 mb-1">Assigned Manager</p>
-            <p className="text-xs text-gray-800">Manager - 1</p>
-          </div>
-        )}
-      </div>
-
-      <div className="border-t border-gray-300 pt-2 mt-4">
-        <p className="text-[10px] text-gray-500">
-          Last updated: {user.last_updated}
-        </p>
-      </div>
+    <div className="overflow-x-auto rounded-lg my-3">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className={tableHeaderClass}>Full Name</TableHead>
+            <TableHead className={tableHeaderClass}>Role</TableHead>
+            <TableHead className={tableHeaderClass}>Email</TableHead>
+            <TableHead className={tableHeaderClass}>Mobile Number</TableHead>
+            <TableHead className={tableHeaderClass}>Action</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {user.map((userData, i) => (
+            <TableRow key={i}>
+              <TableCell className={cellClass}>
+                {userData.firstName} {userData.lastName}
+              </TableCell>
+              <TableCell className={cellClass}>
+                <Badge
+                  className={`text-[10px] text-black px-2 py-1 rounded-full ${
+                    userData.role === "manager" ? "bg-lime-200" : "bg-teal-200"
+                  }`}
+                >
+                  {ucFirst(userData.role)}
+                </Badge>
+              </TableCell>
+              <TableCell className={cellClass}>{userData.email}</TableCell>
+              <TableCell className={cellClass}>
+                {userData.phoneNumber}
+              </TableCell>
+              <TableCell className={cellClass}>
+                <div className="flex items-center space-x-3 text-gray-600">
+                  <Button
+                    variant="secondary"
+                    className="cursor-pointer"
+                    size="icon"
+                    onClick={() => editData(userData.id)}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    className="cursor-pointer"
+                    size="icon"
+                    onClick={() => deleteData(userData.id)}
+                  >
+                    <Trash className="h-4 w-4" />
+                  </Button>
+                </div>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 };
 
-const ActionSection = ({
-  id,
-  editData,
-  deleteData,
-}: {
+interface DialogData {
   id: string;
-  editData: () => void;
-  deleteData: (id: string) => void;
-}) => {
-  return (
-    <Menu as="div" className="relative inline-block text-left">
-      <div>
-        <Menu.Button className="cursor-pointer inline-flex items-center justify-center rounded-md p-1 text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-1">
-          <EllipsisVertical className="h-4 w-4" />
-        </Menu.Button>
-      </div>
-
-      <Menu.Items className="absolute right-0 z-20 mt-1 w-32 origin-top-right rounded-md bg-white shadow-md ring-1 ring-black/10 focus:outline-none text-xs">
-        <div className="py-1">
-          <Menu.Item>
-            {({ active }) => (
-              <button
-                onClick={editData}
-                className={`flex items-center gap-1.5 w-full px-3 py-1.5 transition-colors rounded-sm ${
-                  active ? "bg-indigo-50 text-indigo-600" : "hover:bg-gray-50"
-                }`}
-              >
-                <Pencil className="h-3.5 w-3.5" />
-                Edit
-              </button>
-            )}
-          </Menu.Item>
-          <Menu.Item>
-            {({ active }) => (
-              <button
-                onClick={() => deleteData(id)}
-                className={`flex items-center gap-1.5 w-full px-3 py-1.5 transition-colors rounded-sm ${
-                  active ? "bg-red-50 text-red-600" : "hover:bg-gray-50"
-                }`}
-              >
-                <Trash className="h-3.5 w-3.5" />
-                Delete
-              </button>
-            )}
-          </Menu.Item>
-        </div>
-      </Menu.Items>
-    </Menu>
-  );
-};
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone_number: string;
+  role: string;
+  last_updated: string;
+  password: string;
+  confirm_password: string;
+  manager: string;
+}
 
 const AddUserDialog = ({
   isOpen,
@@ -395,21 +435,21 @@ const AddUserDialog = ({
   setFormData,
   errors,
   setErrors,
+  options,
 }: {
   isOpen: boolean;
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   loadUsers: () => void;
-  formData: React.Dispatch<React.SetStateAction<FormData>>;
-  setFormData: React.Dispatch<React.SetStateAction<FormData>>;
-  errors: React.Dispatch<React.SetStateAction<object>>;
-  setErrors: React.Dispatch<React.SetStateAction<object>>;
+  formData: DialogData;
+  setFormData: React.Dispatch<React.SetStateAction<UserFormData>>;
+  errors: Record<string, string>;
+  setErrors: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  options: { id: string; name: string }[];
 }) => {
   const [submitting, setSubmitting] = useState(false);
 
   const validateForm = () => {
-    const newErrors: Partial<
-      Omit<typeof formData, "profile"> & { profile: string | null }
-    > = {};
+    const newErrors: Record<string, string> = {};
 
     if (!formData.firstName.trim())
       newErrors.firstName = "First name is required";
@@ -435,10 +475,10 @@ const AddUserDialog = ({
       newErrors.confirm_password = "Passwords do not match";
     }
     if (!formData.role) newErrors.role = "Role is required";
-
+    if (!formData.manager && formData.role == "recruiter")
+      newErrors.manager = "Manager is required";
     setErrors({
       ...newErrors,
-      profile: newErrors.profile ? String(newErrors.profile) : null,
     });
     return Object.keys(newErrors).length === 0;
   };
@@ -448,37 +488,14 @@ const AddUserDialog = ({
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     >
   ) => {
-    const { name, value, type } = e.target;
-
-    if (
-      type === "file" &&
-      e.target instanceof HTMLInputElement &&
-      e.target.files
-    ) {
-      const file = e.target.files[0];
-
-      if (!["image/jpeg", "image/png"].includes(file.type)) {
-        setErrors((prev) => ({
-          ...prev,
-          profile: "Only JPG/PNG files allowed",
-        }));
-        return;
-      }
-      if (file.size > 2 * 1024 * 1024) {
-        setErrors((prev) => ({ ...prev, profile: "File must be under 2MB" }));
-        return;
-      }
-
-      setFormData((prev) => ({ ...prev, profile: file }));
-      return;
-    }
+    const { name, value } = e.target;
 
     setFormData((prev) => {
       const updated = { ...prev, [name]: value };
       return updated;
     });
   };
-
+  const [formError, setFormError] = useState("");
   const handleSubmit = async () => {
     if (!validateForm()) return;
 
@@ -493,17 +510,20 @@ const AddUserDialog = ({
         }
       });
 
-      // Add any extra info outside formData
-      data.append("type", "add-user");
+      // Determine the API method and endpoint based on the id
+      const method = formData.id ? "put" : "post";
+      const endpoint = formData.id
+        ? `${Config.api_endpoint}user/update`
+        : `${Config.api_endpoint}user/create`;
 
-      await axios
-        .post("http://127.0.0.1:8000/post-data", data, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        })
+      await axios[method](endpoint, data, {
+        headers: {
+          Authorization: `${formData.id}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      })
         .then((response) => {
-          if (response.status == 200) {
+          if (response.status === 200) {
             setFormData({
               id: "",
               firstName: "",
@@ -513,18 +533,19 @@ const AddUserDialog = ({
               password: "",
               confirm_password: "",
               role: "",
-              profile: null,
+              manager: "",
+              last_updated: "",
             });
             setErrors({});
             setIsOpen(false);
             toast.success(
-              `User ${formData.id ? "updated" : "added"} successfully`
+              `User  ${formData.id ? "updated" : "added"} successfully`
             );
             loadUsers();
           }
         })
         .catch((error) => {
-          console.error("API Error:", error);
+          setFormError(error.message);
         });
     } catch (error: any) {
       if (axios.isAxiosError(error) && error.response?.data?.errors) {
@@ -535,12 +556,6 @@ const AddUserDialog = ({
             ? value[0]
             : value;
         }
-        setErrors({
-          ...formattedErrors,
-          profile: formattedErrors.profile
-            ? String(formattedErrors.profile)
-            : null,
-        });
       } else {
         console.error("Unexpected error:", error);
       }
@@ -554,15 +569,10 @@ const AddUserDialog = ({
       <DialogContent className="max-w-[80vw] md:max-w-[60vw] overflow-hidden rounded-lg">
         <DialogHeader>
           <DialogTitle className="my-4 text-xl text-[#0044A3] font-bold text-center">
-            Add a New User
+            {formData.id ? "Update a User" : "Add a New User"}
           </DialogTitle>
         </DialogHeader>
         <div className="mt-4 flex flex-col gap-6">
-          {formData.profile && (
-            <div className="flex justify-center items-center">
-              <img src={formData.profile} className="rounded-full w-25 h-25" />
-            </div>
-          )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <InputField
               label="First Name"
@@ -656,28 +666,56 @@ const AddUserDialog = ({
                 )}
               </div>
             </div>
-
-            <div className="flex items-center gap-4">
-              <Label className="text-[#1E293B] w-[30%]">Profile</Label>
-              <Input
-                name="profile"
-                type="file"
-                onChange={handleChange}
-                className="w-[70%]"
-              />
-              {errors.profile && (
-                <p className="text-red-500 text-xs mt-1">{errors.profile}</p>
-              )}
-            </div>
+            {formData.role == "recruiter" && (
+              <div className="flex items-center gap-4">
+                <Label className="text-[#1E293B] w-[30%]">Manager</Label>
+                <div className="w-[70%] flex flex-col gap-2">
+                  <Select
+                    name="cliemanagerntName"
+                    onValueChange={(val) =>
+                      handleChange({
+                        target: { name: "manager", value: val },
+                      } as any)
+                    }
+                    defaultValue=""
+                    value={formData.manager}
+                  >
+                    <SelectTrigger className="w-full placeholder:text-[13px] px-4 py-5">
+                      <SelectValue placeholder="Select Manager" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {options.map(
+                        (data: { id: string; name: string }, index: number) => (
+                          <SelectItem key={index} value={data.id}>
+                            {data.name}
+                          </SelectItem>
+                        )
+                      )}
+                    </SelectContent>
+                  </Select>
+                  {errors.manager && (
+                    <p className="text-red-500 text-xs mt-1 ml-2">
+                      {errors.manager}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
-          <div className="flex justify-center gap-6 my-6">
+          <div className="flex justify-center gap-6 my-3">
             <Button
               onClick={handleSubmit}
               disabled={submitting}
               className="bg-[#0044A3] rounded-[3px] hover:bg-blue-950"
             >
-              {submitting ? "Saving..." : "Save"}
+              {submitting
+                ? formData.id
+                  ? "Updating..."
+                  : "Saving..."
+                : formData.id
+                ? "Update"
+                : "Save"}
             </Button>
             <Button
               onClick={() => setIsOpen(false)}
@@ -686,6 +724,11 @@ const AddUserDialog = ({
               Cancel
             </Button>
           </div>
+          {formError && (
+            <div className="flex justify-center items-center">
+              <p className="text-red-500 text-xs">{formError}</p>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
@@ -705,14 +748,15 @@ const DeleteDialog = ({
 }) => {
   const deleteData = () => {
     axios
-      .post(`http://127.0.0.1:8000/post-data`, {
-        type: "delete-user",
-        id: deleteId,
+      .delete(`${Config.api_endpoint}user/delete/${deleteId}`, {
+        headers: {
+          Authorization: `Bearer ${getUserToken()}`,
+        },
       })
       .then((response) => {
-        const data = response.data.data;
+        console.log(response);
         setIsDeleteOpen(false);
-        toast.success("User deleted successfully");
+        toast.success("User  deleted successfully");
         loadUsers();
       })
       .catch((error) => {
