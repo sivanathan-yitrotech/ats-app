@@ -753,9 +753,9 @@ const AddCandidateDialog = ({
                     <SelectValue placeholder="Select Years" />
                   </SelectTrigger>
                   <SelectContent>
-                    {[...Array(30)].map((_, i) => (
+                    {[...Array(31)].map((_, i) => (
                       <SelectItem key={i} value={(i + 1).toString()}>
-                        {i + 1}
+                        {i}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -779,9 +779,9 @@ const AddCandidateDialog = ({
                     <SelectValue placeholder="Select Months" />
                   </SelectTrigger>
                   <SelectContent>
-                    {[...Array(12)].map((_, i) => (
+                    {[...Array(13)].map((_, i) => (
                       <SelectItem key={i} value={(i + 1).toString()}>
-                        {i + 1}
+                        {i}
                       </SelectItem>
                     ))}
                   </SelectContent>

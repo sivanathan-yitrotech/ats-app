@@ -11,6 +11,8 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { TagsInput } from "@/components/ui/taginput";
+import { getUserToken } from "../../utils/common";
+import Config from "@/config.json";
 import {
   Select,
   SelectContent,
@@ -91,14 +93,14 @@ const CandidateStatus = () => {
 
   const getOptions = () => {
     axios
-      .get(`http://127.0.0.1:8000/get-data`, {
-        params: {
-          type: "candidate-status-options",
-        },
-      })
+    .get(`${Config.api_endpoint}fetch_data/positions/list`, {
+      headers: {
+        Authorization: `Bearer ${getUserToken()}`,
+      },
+    })
       .then((response) => {
-        if (response.data && response.data.data) {
-          setOptions(response.data.data);
+        if (response.data) {
+          setOptions(response.data);
         } else {
           console.error("Unexpected response structure:", response.data);
         }
@@ -110,9 +112,11 @@ const CandidateStatus = () => {
 
   const loadCandidates = () => {
     axios
-      .get(`http://127.0.0.1:8000/get-data`, {
+      .get(`${Config.api_endpoint}fetch_data/candidates/status-overview`, {
+        headers: {
+          Authorization: `Bearer ${getUserToken()}`,
+        },
         params: {
-          type: "candidate-status-list",
           page: page,
           limit: limit,
           filterClient: filterClient,
@@ -125,7 +129,7 @@ const CandidateStatus = () => {
       .then((response) => {
         if (response.data && response.data.data) {
           setCandidates(response.data.data);
-          setTotal(75); // Assuming the total count is returned in the response
+          setTotal(0); // Assuming the total count is returned in the response
         } else {
           console.error("Unexpected response structure:", response.data);
         }
