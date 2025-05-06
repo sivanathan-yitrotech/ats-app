@@ -9,6 +9,7 @@ import {
   FileUser,
   Menu,
   LogOut,
+  CircleUser,
 } from "lucide-react";
 import Logo from "@/assets/logo.png";
 import { getUserData } from "../../utils/common";
@@ -190,12 +191,15 @@ const Layout: React.FC<LayoutProps> = ({ content, isRaw }) => {
 
             {/* Profile Picture */}
             <div className="relative">
-              <img
+            <div className="bg-[#fbf9fa] p-3 cursor-pointer rounded-full">
+              <CircleUser className="cursor-pointer text-[#0044A3]" size={25} onClick={() => setDropdownOpen(!isDropdownOpen)}/>
+                </div>
+              {/* <img
                 src={userData?.profileImage || "https://i.pravatar.cc/299"}
                 alt="Profile"
                 className="w-8 h-8 rounded-full cursor-pointer"
                 onClick={() => setDropdownOpen(!isDropdownOpen)}
-              />
+              /> */}
               {/* Dropdown Menu */}
               {isDropdownOpen && (
                 <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-lg border border-gray-200">

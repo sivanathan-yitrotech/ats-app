@@ -97,6 +97,7 @@ const Candidates = () => {
     joiningDate: string;
     ctc_symble: string;
     ctc: string;
+    current_ctc: string;
     workMode: string;
     skills: string[];
     resume: File | null;
@@ -104,7 +105,7 @@ const Candidates = () => {
 
   const loadCandidates = () => {
     axios
-      .get(`${Config.api_endpoint}candidates/readall`, {
+      .get(`${Config.api_endpoint}candidate_application/readall`, {
         headers: {
           Authorization: `Bearer ${getUserToken()}`,
         },
@@ -141,6 +142,7 @@ const Candidates = () => {
     joiningDate: "",
     ctc_symble: "",
     ctc: "",
+    current_ctc: "",
     workMode: "onsite",
     skills: [],
     resume: null,
@@ -218,6 +220,7 @@ interface CandidateFormData {
   joiningDate: string;
   ctc_symble: string;
   ctc: string;
+  current_ctc: string;
   skills: string[];
   resume: File | null;
 }
@@ -303,6 +306,7 @@ const CardSection = ({
                   joiningDate: "",
                   ctc_symble: "",
                   ctc: "",
+                  current_ctc: "",
                   workMode: "onsite",
                   skills: [],
                   resume: null,
@@ -376,6 +380,7 @@ const CandidateTable = ({
           joiningDate: data.joinDate,
           ctc_symble: data.exp_ctc_symble,
           ctc: data.exp_ctc_value,
+          current_ctc: data.current_ctc,
           workMode: data.workMode,
           skills: data.skills,
           resume: null,
@@ -512,6 +517,7 @@ interface CandidateFormData {
   city: string;
   joiningDate: string;
   ctc: string;
+  current_ctc: string;
   workMode: string;
   skills: string[];
   resume: File | null;
@@ -529,6 +535,7 @@ interface CandidateFormDataErrors {
   city: string;
   joiningDate: string;
   ctc: string;
+  current_ctc: string;
   skills: string;
   resume: string;
 }
@@ -587,9 +594,11 @@ const AddCandidateDialog = ({
     if (isEmpty(formData.joiningDate))
       newErrors.joiningDate = "Joining date is required";
     if (isEmpty(formData.ctc)) newErrors.ctc = "Expected CTC is required";
+    if (isEmpty(formData.current_ctc))
+      newErrors.current_ctc = "Current CTC is required";
     if (isEmpty(formData.skills)) newErrors.skills = "Skills are required";
-    if (!formData.resume && !formData.id)
-      newErrors.resume = "Resume file is required";
+    // if (!formData.resume && !formData.id)
+    //   newErrors.resume = "Resume file is required";
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -620,10 +629,21 @@ const AddCandidateDialog = ({
           payload.append(key, value);
         }
       });
-      payload.append("type", "add-candidate");
 
-      const res = await axios.post("http://127.0.0.1:8000/post-data", payload, {
-        headers: { "Content-Type": "multipart/form-data" },
+      if(!formData.id) {
+        payload.append("user_id",getUserData().id);
+      }
+
+      const method = formData.id ? "put" : "post";
+      const endpoint = formData.id
+        ? `${Config.api_endpoint}candidate_application/update`
+        : `${Config.api_endpoint}candidate_application/create`;
+
+      const res = await axios[method](endpoint, payload, {
+        headers: {
+          Authorization: `Bearer ${getUserToken()}`,
+          "Content-Type": "multipart/form-data",
+        },
       });
 
       if (res.status === 200) {
@@ -641,6 +661,7 @@ const AddCandidateDialog = ({
           city: "",
           joiningDate: "",
           ctc: "",
+          current_ctc: "",
           workMode: "",
           skills: [],
           resume: null,
@@ -807,9 +828,7 @@ const AddCandidateDialog = ({
 
             {/* CTC */}
             <div className="flex items-center gap-4">
-              <Label className="text-[#1E293B] w-[30%]">
-                Expected CTC/Year
-              </Label>
+              <Label className="text-[#1E293B] w-[30%]">CTC/Year</Label>
               <Select
                 value={formData.ctc_symble}
                 defaultValue="$"
@@ -827,18 +846,37 @@ const AddCandidateDialog = ({
                   <SelectItem value="$">$</SelectItem>
                 </SelectContent>
               </Select>
-              <div className="w-[55%] flex flex-col gap-0.5">
-                <Input
-                  name="ctc"
-                  type="number"
-                  value={formData.ctc}
-                  onChange={handleChange}
-                  placeholder="Enter the Expected CTC"
-                  className="w-full placeholder:text-[12px] px-4 py-5"
-                />
-                {errors.ctc && (
-                  <p className="text-red-500 text-xs mt-1 ml-2">{errors.ctc}</p>
-                )}
+              <div className="w-[55%] flex gap-1">
+                <div className="flex flex-col gap-1">
+                  <Input
+                    name="current_ctc"
+                    type="number"
+                    value={formData.current_ctc}
+                    onChange={handleChange}
+                    placeholder="Current CTC"
+                    className="w-full placeholder:text-[12px] px-4 py-5"
+                  />
+                  {errors.current_ctc && (
+                    <p className="text-red-500 text-xs mt-1 ml-2">
+                      {errors.current_ctc}
+                    </p>
+                  )}
+                </div>
+                <div className="flex flex-col gap-1">
+                  <Input
+                    name="ctc"
+                    type="number"
+                    value={formData.ctc}
+                    onChange={handleChange}
+                    placeholder="Expected CTC"
+                    className="w-full placeholder:text-[12px] px-4 py-5"
+                  />
+                  {errors.ctc && (
+                    <p className="text-red-500 text-xs mt-1 ml-2">
+                      {errors.ctc}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 
