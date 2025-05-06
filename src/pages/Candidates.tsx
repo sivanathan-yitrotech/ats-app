@@ -117,8 +117,8 @@ const Candidates = () => {
         },
       })
       .then((response) => {
-        setClients(response.data.data);
-        setTotal(75);
+        setClients(response.data.data.list);
+        setTotal(response.data.data.total);
       })
       .catch((error) => {
         console.error("API Error:", error);
@@ -358,10 +358,9 @@ const CandidateTable = ({
 }) => {
   const editData = ({ id }: { id: string }) => {
     axios
-      .get(`http://127.0.0.1:8000/get-data`, {
-        params: {
-          type: "edit-candidate",
-          id: id,
+      .get(`${Config.api_endpoint}candidate_application/read`, {
+        headers: {
+          Authorization: `${id}`,
         },
       })
       .then((response) => {
@@ -382,7 +381,7 @@ const CandidateTable = ({
           ctc: data.exp_ctc_value,
           current_ctc: data.current_ctc,
           workMode: data.workMode,
-          skills: data.skills,
+          skills: data.skills.split(","),
           resume: null,
         });
         setIsOpen(true);
@@ -394,19 +393,18 @@ const CandidateTable = ({
 
   const assignPosting = ({ id }: { id: string }) => {
     axios
-      .get(`http://127.0.0.1:8000/get-data`, {
-        params: {
-          type: "get-assign-details",
-          id: id,
+      .get(`${Config.api_endpoint}fetch_data/candidates/${id}/postings`, {
+        headers: {
+          Authorization: `Bearer ${getUserToken()}`,
         },
       })
       .then((response) => {
         const data = response.data.data;
         setAssignData({
-          id: data.id,
+          id: id,
           candidateName: data.candidateName,
           email: data.email,
-          contactNumber: data.contactNumber,
+          contactNumber: data.mobileNumber,
           postings: data.postings,
         });
         setAssignOpen(true);
@@ -417,11 +415,19 @@ const CandidateTable = ({
   };
 
   const unAssignPosting = ({ id }: { id: string }) => {
-    axios
-      .post(`http://127.0.0.1:8000/post-data`, {
-        type: "un-assign",
-        id: id,
-      })
+    const payload = new FormData();
+    payload.append("id", id);
+    payload.append("postings", "");
+    axios["put"](
+      `${Config.api_endpoint}updates/candidates/assigning-position`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${getUserToken()}`,
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    )
       .then(() => {
         toast.success("Position un-assigned successfully");
         loadCandidates();
@@ -630,8 +636,8 @@ const AddCandidateDialog = ({
         }
       });
 
-      if(!formData.id) {
-        payload.append("user_id",getUserData().id);
+      if (!formData.id) {
+        payload.append("user_id", getUserData().id);
       }
 
       const method = formData.id ? "put" : "post";
@@ -693,7 +699,7 @@ const AddCandidateDialog = ({
       >
         <DialogHeader>
           <DialogTitle className="my-4 text-xl text-[#0044A3] font-bold text-center">
-            Add Candidate
+            {formData.id ? "Update a Candidate" : "Add a New Candidate"}
           </DialogTitle>
 
           <div className="mt-4 grid grid-cols-2 gap-x-8 gap-y-5">
@@ -908,7 +914,7 @@ const AddCandidateDialog = ({
 
             {/* Skills */}
             <div className="flex items-center gap-4">
-              <Label className="text-[#1E293B] w-[30%]">Skills</Label>
+              <Label className="text-[#1E293B] w-[30%]">Skills </Label>
               <div className="w-[70%] flex flex-col gap-0.5">
                 <TagsInput
                   value={formData.skills}
@@ -952,7 +958,13 @@ const AddCandidateDialog = ({
               disabled={submitting}
               className="bg-[#0044A3] rounded-[3px] hover:bg-blue-950"
             >
-              {submitting ? "Saving..." : "Save"}
+              {submitting
+                ? formData.id
+                  ? "Updating..."
+                  : "Saving..."
+                : formData.id
+                ? "Update"
+                : "Save"}
             </Button>
             <Button
               onClick={() => setIsOpen(false)}
@@ -987,16 +999,22 @@ const AssignDialog = ({
       setPostingsError("Select Job Posting");
       return;
     }
-
-    axios
-      .post(`http://127.0.0.1:8000/post-data`, {
-        type: "save-assign",
-        id: id,
-        postings: postings,
-      })
+    const payload = new FormData();
+    payload.append("id", id);
+    payload.append("postings", postings);
+    axios["put"](
+      `${Config.api_endpoint}updates/candidates/assigning-position`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${getUserToken()}`,
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    )
       .then((response) => {
         console.log(response);
-        toast.success("Position assigned successfully");
+        toast.success(`Position assigned successfully`);
         loadCandidates();
         setAssignData({
           id: "",
@@ -1046,6 +1064,7 @@ const AssignDialog = ({
               </Label>
               <div className="flex flex-col w-[70%]">
                 <Select
+                  value={postings}
                   onValueChange={(val) => {
                     setPostings(val);
                     setPostingsError("");
@@ -1109,10 +1128,14 @@ const DeleteDialog = ({
 }) => {
   const deleteData = () => {
     axios
-      .post(`http://127.0.0.1:8000/post-data`, {
-        type: "delete-candidate",
-        id: deleteId,
-      })
+      .delete(
+        `${Config.api_endpoint}candidate_application/delete/${deleteId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${getUserToken()}`,
+          },
+        }
+      )
       .then(() => {
         setIsDeleteOpen(false);
         toast.success("Candidate deleted successfully");
