@@ -793,7 +793,7 @@ const AddJobPostingDialog = ({
                   <Input
                     name="ctc"
                     type="number"
-                    placeholder="Enter the Expected CTC"
+                    placeholder="Enter the CTC"
                     value={formData.ctc}
                     onChange={handleChange}
                     className="w-[70%] placeholder:text-[12px] px-4 py-5"

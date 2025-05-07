@@ -6,6 +6,8 @@ import PaginationSection from "@/components/ui/page";
 import NoData from "@/components/ui/nodata";
 import SortBy from "@/components/ui/sortby";
 import axios from "axios";
+import { getUserToken, ucFirst } from "../../utils/common";
+import Config from "@/config.json";
 
 interface JobCardData {
   id: number;
@@ -15,7 +17,7 @@ interface JobCardData {
   jobPosting: string;
   company: string;
   mode: string;
-  interviewers: string[];
+  interviewers: string; // Changed type to array of strings
   interview_date: string; // Added property
 }
 
@@ -30,9 +32,11 @@ const Interviews = () => {
 
   const loadInterviews = () => {
     axios
-      .get(`http://127.0.0.1:8000/get-data`, {
+      .get(`${Config.api_endpoint}fetch_data/interviews/list`, {
+        headers: {
+          Authorization: `Bearer ${getUserToken()}`,
+        },
         params: {
-          type: "interviews-list",
           page,
           limit,
           filterby: filterBy,
@@ -42,7 +46,7 @@ const Interviews = () => {
       })
       .then((response) => {
         setInterviews(response.data.data);
-        setTotal(55);
+        setTotal(response.data.data.length);
       })
       .catch((error) => {
         console.error("API Error:", error.response?.data || error.message);
@@ -115,10 +119,9 @@ const CardSection = ({
       <div className="overflow-x-auto flex justify-between gap-4">
         <div className="flex items-center gap-7 mb-4 bg-[#F1F5F9] rounded-lg p-2">
           {[
-            { label: "All Jobs", value: 60, color: "bg-blue-400" },
-            { label: "Scheduled", value: 40, color: "bg-yellow-400" },
-            { label: "Inprogress", value: 10, color: "bg-green-400" },
-            { label: "Cancelled", value: 10, color: "bg-red-400" },
+            { label: "All", value: 10, color: "bg-blue-400" },
+            { label: "Scheduled", value: 6, color: "bg-yellow-400" },
+            { label: "Completed", value: 4, color: "bg-green-400" },
           ].map(({ label, value, color }, idx) => (
             <div
               key={idx}
@@ -188,17 +191,17 @@ const JobCardSection = ({ data }: { data: JobCardData[] }) => {
           >
             <div className="flex justify-between items-center mb-2">
               <span
-                className={`text-[10px] font-semibold px-3 py-1 rounded-md ${
+                className={`text-xs font-semibold px-3 py-1 rounded-md ${
                   card.status === "Scheduled"
                     ? "bg-yellow-100 text-yellow-600"
-                    : card.status === "Inprogress"
+                    : card.status === "Completed"
                     ? "bg-green-100 text-green-600"
-                    : "bg-red-100 text-red-600"
+                    : ""
                 }`}
               >
                 {card.status}
               </span>
-              <div className="flex flex-col gap-1">
+              <div className="flex justify-between items-center gap-1">
                 <span
                   className={`${
                     card.stage === "L1"
@@ -208,9 +211,8 @@ const JobCardSection = ({ data }: { data: JobCardData[] }) => {
                       : "bg-violet-100 text-violet-600"
                   } text-xs font-[500] px-3 py-1 rounded-md`}
                 >
-                  {card.stage}
+                  {ucFirst(card.stage)} - {ucFirst(card.mode)}
                 </span>
-                <span className="text-[10px] font-medium">{card.mode}</span>
               </div>
             </div>
 
@@ -229,11 +231,17 @@ const JobCardSection = ({ data }: { data: JobCardData[] }) => {
                 <div className="flex flex-col">
                   <p className="text-xs text-gray-500 mb-1">Interviewers</p>
                   <div className="flex flex-col ml-1">
-                    {card.interviewers.map((recruiter, recruiterIndex) => (
-                      <p className="text-[10px] text-gray-500">
-                        {recruiterIndex + 1}. {recruiter}
-                      </p>
-                    ))}
+                    {Array.isArray(card.interviewers.split(",")) &&
+                      card.interviewers
+                        .split(",")
+                        .map((recruiter: string, recruiterIndex: number) => (
+                          <p
+                            className="text-[11px] text-gray-500"
+                            key={recruiterIndex}
+                          >
+                            {recruiterIndex + 1}. {recruiter}
+                          </p>
+                        ))}
                   </div>
                 </div>
                 <div className="flex flex-col">

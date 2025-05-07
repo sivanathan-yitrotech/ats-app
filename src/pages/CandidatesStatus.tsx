@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { TagsInput } from "@/components/ui/taginput";
-import { getUserToken } from "../../utils/common";
+import { getUserData, getUserToken } from "../../utils/common";
 import Config from "@/config.json";
 import {
   Select,
@@ -93,11 +93,11 @@ const CandidateStatus = () => {
 
   const getOptions = () => {
     axios
-    .get(`${Config.api_endpoint}fetch_data/positions/list`, {
-      headers: {
-        Authorization: `Bearer ${getUserToken()}`,
-      },
-    })
+      .get(`${Config.api_endpoint}fetch_data/positions/list`, {
+        headers: {
+          Authorization: `Bearer ${getUserToken()}`,
+        },
+      })
       .then((response) => {
         if (response.data) {
           setOptions(response.data);
@@ -432,12 +432,12 @@ const CandidateCard = ({
   formData: any;
   setFormData: any;
 }) => {
-  console.log(setEditId);
-  console.log(formData);
   const editData = (id: string) => {
     axios
-      .get("http://127.0.0.1:8000/get-data", {
-        params: { type: "edit-status-data", id: id },
+      .get(`${Config.api_endpoint}fetch_data/candidate/status/${id}`, {
+        headers: {
+          Authorization: `Bearer ${getUserToken()}`,
+        },
       })
       .then((response) => {
         const resData = response.data.data;
@@ -446,7 +446,7 @@ const CandidateCard = ({
           onboardDate: resData.onboardDate,
           interviewDate: resData.interviewDate,
           interviewTime: resData.interviewTime,
-          interviewers: resData.interviewers,
+          interviewers: resData.interviewers.split(","),
           mode: resData.mode,
           remarks: resData.remarks,
           communication: resData.communication,
@@ -454,6 +454,7 @@ const CandidateCard = ({
           overall: resData.overall,
           isFeeded: resData.isFeeded,
         });
+        setEditId(resData.id);
         setData(resData);
         setStatus(resData.status);
         setIsOpen(true);
@@ -501,33 +502,38 @@ const CandidateCard = ({
             {type !== "sourced" && (
               <div className="mt-3">
                 <div className="flex justify-between items-start">
-                  <div className="flex flex-col">
-                    <p className="text-[10px] font-semibold mb-1">Recruiters</p>
-                    <div className="flex flex-col gap-1">
-                      {card.recruiters.map((recruiter, recruiterIndex) => (
-                        <p key={recruiterIndex} className="text-[10px]">
-                          {recruiter}
-                        </p>
-                      ))}
-                    </div>
-                  </div>
-
-                  {["l1", "l2", "l3"].includes(type) && (
+                  {card.recruiters.length > 0 && (
                     <div className="flex flex-col">
                       <p className="text-[10px] font-semibold mb-1">
-                        Interviewers
+                        Recruiters
                       </p>
                       <div className="flex flex-col gap-1">
-                        {card.interviewers.map(
-                          (interviewer, interviewerIndex) => (
-                            <p key={interviewerIndex} className="text-[10px]">
-                              {interviewer}
-                            </p>
-                          )
-                        )}
+                        {card.recruiters.map((recruiter, recruiterIndex) => (
+                          <p key={recruiterIndex} className="text-[10px]">
+                            {recruiter}
+                          </p>
+                        ))}
                       </div>
                     </div>
                   )}
+
+                  {["l1", "l2", "l3"].includes(type) &&
+                    card.interviewers.length > 0 && (
+                      <div className="flex flex-col">
+                        <p className="text-[10px] font-semibold mb-1">
+                          Interviewers
+                        </p>
+                        <div className="flex flex-col gap-1">
+                          {card.interviewers.map(
+                            (interviewer, interviewerIndex) => (
+                              <p key={interviewerIndex} className="text-[10px]">
+                                {interviewer}
+                              </p>
+                            )
+                          )}
+                        </div>
+                      </div>
+                    )}
                 </div>
               </div>
             )}
@@ -665,27 +671,60 @@ const UpdateStatusDialog: React.FC<UpdateStatusDialogProps> = ({
       const data = new FormData();
 
       Object.entries(formData).forEach(([key, value]) => {
-        if (value !== null && value !== undefined) {
+        if (value !== null && value !== undefined && key != "isFeeded") {
           data.append(key, String(value));
         }
       });
 
-      if (["l2", "l3"].includes(status) && !formData.isFeeded) {
-        data.append("communication", String(formData.communication));
-        data.append("technical", String(formData.technical));
-        data.append("overall", String(formData.overall));
+      // if (["l2", "l3"].includes(status) && !formData.isFeeded) {
+      data.append(
+        "communication",
+        String(
+          formData.communication === undefined ? "" : formData.communication
+        )
+      );
+      data.append(
+        "technical",
+        String(formData.technical === undefined ? "" : formData.technical)
+      );
+      data.append(
+        "overall",
+        String(formData.overall === undefined ? "" : formData.overall)
+      );
+
+      if (formData.communication) {
+        let feedbackLevel = "l3";
+        if (status === "l2") {
+          feedbackLevel = "l1";
+        } else if (status === "l3") {
+          feedbackLevel = "l2";
+        }
+      
+        data.append("feedback_level", feedbackLevel);
       }
+      
+
+      // }
 
       data.append("status", status);
-      data.append("type", "update-candidate-status");
-      data.append("id", editId);
+      data.append("remarks", formData.remarks || "");
+      if (status != "offered") {
+        data.append("offeredDate", "");
+      }
+      if (status != "onboard") {
+        data.append("onboardDate", "");
+      }
 
-      const response = await axios.post(
-        "http://127.0.0.1:8000/post-data",
+      data.append("id", editId);
+      data.append("user_id", getUserData().id);
+
+      const response = await axios["post"](
+        `${Config.api_endpoint}interview_schedule/upsert`,
         data,
         {
           headers: {
-            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${getUserToken()}`,
+            "Content-Type": "application/x-www-form-urlencoded",
           },
         }
       );
@@ -811,7 +850,7 @@ const UpdateStatusDialog: React.FC<UpdateStatusDialogProps> = ({
                   </Label>
                   <span className="w-[70%] text-[#4B5563] text-sm">
                     <Badge className="bg-[#0044A3] text-white font-semibold">
-                      {ucFirst(getData.jobPosting)}
+                      {ucFirst(getData.status)}
                     </Badge>
                   </span>
                 </div>
@@ -975,8 +1014,8 @@ const UpdateStatusDialog: React.FC<UpdateStatusDialogProps> = ({
                             <SelectValue placeholder="Select Mode" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="1">Online</SelectItem>
-                            <SelectItem value="2">Inperson</SelectItem>
+                            <SelectItem value="online">Online</SelectItem>
+                            <SelectItem value="inperson">Inperson</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
