@@ -33,6 +33,7 @@ const AuthenticatedRoute = ({
   permission: Record<string, string[]>;
   role?: string;
 }) => {
+  console.log(role);
   const userCookie = Cookie.get("user");
   if (!userCookie) {
     // Not authenticated, redirect to login

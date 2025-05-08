@@ -1258,7 +1258,7 @@ const JobCardSection = ({
                           key={recruiterIndex}
                           className="text-indigo-500 px-2 py-0.5 rounded-2xl text-[10px] bg-indigo-100"
                         >
-                          {recruiterIndex + 1}. {recruiter}
+                          {recruiter ? (recruiter):"Not Assigned"}
                         </p>
                       ));
                     })()}

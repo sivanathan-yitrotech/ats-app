@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Menu, Pencil, Download } from "lucide-react";
+import { Menu, Pencil } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -234,32 +234,18 @@ const InvoiceTable = ({
   setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   setFormData: React.Dispatch<React.SetStateAction<InvoiceData>>;
 }) => {
-  const editData = ({ id }: { id: string }) => {
-    axios
-      .get(`http://127.0.0.1:8000/get-data`, {
-        params: {
-          type: "invoice-data",
-          id: id,
-        },
-      })
-      .then((response) => {
-        const data = response.data.data;
-        console.log(data);
-        setFormData({
-          id: data.id,
-          clientName: data.clientName,
-          candidateName: data.candidateName,
-          jobTitle: data.jobTitle,
-          invoiceAmount: data.invoiceAmount,
-          status: data.status,
-          issued_date: data.issued_date,
-          invoice_date: "",
-        });
-        setIsOpen(true);
-      })
-      .catch((error) => {
-        console.error("API Error:", error);
-      });
+  const editData = (client: InvoiceData) => {
+    setFormData({
+      id: client.id,
+      clientName: client.clientName,
+      candidateName: client.candidateName,
+      jobTitle: client.jobTitle,
+      invoiceAmount: client.invoiceAmount,
+      status: client.status,
+      issued_date: client.issued_date,
+      invoice_date: "",
+    });
+    setIsOpen(true);
   };
 
   return (
@@ -300,17 +286,17 @@ const InvoiceTable = ({
 
               <TableCell className={cellClass}>
                 <div className="flex items-center space-x-3 text-gray-600">
-                  {client.status == "pending" && (
+                  {/* {client.status == "pending" && ( */}
                     <Button
                       variant="secondary"
                       className="cursor-pointer"
                       size="icon"
-                      onClick={() => editData({ id: client.id })}
+                      onClick={() => editData(client)}
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
-                  )}
-                  {client.status == "completed" && (
+                  {/* )} */}
+                  {/* {client.status == "completed" && (
                     <Button
                       variant="secondary"
                       className="cursor-pointer"
@@ -323,7 +309,7 @@ const InvoiceTable = ({
                         <Download className="h-4 w-4" />
                       </a>
                     </Button>
-                  )}
+                  )} */}
                 </div>
               </TableCell>
             </TableRow>
@@ -380,11 +366,19 @@ const UpdateStatusDialog = ({
 
     setSubmitting(true);
     try {
-      const response = await axios.post("http://127.0.0.1:8000/post-data", {
-        type: "update-invoice",
-        id: id,
-      });
-
+      const updateData = new FormData();
+      updateData.append('invoice_id',id);
+      updateData.append('status',formData.status);
+      const response = await axios["post"](
+        `${Config.api_endpoint}interview_schedule/genrate-invoice/update/${id}`,
+        updateData,
+        {
+          headers: {
+            Authorization: `Bearer ${getUserToken()}`,
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        }
+      );
       if (response.status === 200) {
         setFormData({
           id: "",

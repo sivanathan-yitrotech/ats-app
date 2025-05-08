@@ -15,7 +15,8 @@ import axios from "axios";
 import PaginationSection from "@/components/ui/page";
 import NoData from "@/components/ui/nodata";
 import SortBy from "@/components/ui/sortby";
-import { ucFirst } from "../../utils/common";
+import { getUserData, getUserToken, ucFirst } from "../../utils/common";
+import Config from "@/config.json";
 
 const tableHeaderClass = "text-[#0044A3] font-semibold text-sm py-3 px-6";
 const cellClass = "text-sm font-medium text-gray-700 py-3 px-6";
@@ -44,16 +45,23 @@ const AssignedPositions = () => {
 
   const loadJobPostings = () => {
     axios
-      .get(`http://127.0.0.1:8000/get-data`, {
-        params: {
-          type: "jobpostings-list",
-          page: page,
-          limit: limit,
-          filterby: filterBy,
-          sortby: sortBy,
-          searchby: search,
-        },
-      })
+      .get(
+        `${Config.api_endpoint}fetch_data/assigned-positions/list/${
+          getUserData().id
+        }`,
+        {
+          headers: {
+            Authorization: `Bearer ${getUserToken()}`,
+          },
+          params: {
+            page: page,
+            limit: limit,
+            filterby: filterBy,
+            sortby: sortBy,
+            searchby: search,
+          },
+        }
+      )
       .then((response) => {
         setJobPostings(response.data.data);
         setTotal(75);
@@ -88,7 +96,6 @@ const AssignedPositions = () => {
         page={page}
         setPage={setPage}
       />
-      
     </div>
   );
 };

@@ -60,7 +60,7 @@ const Users = () => {
   const [page, setPage] = useState(1);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [options, setOptions] = useState<Array<{ id: string; name: string }>>(
+  const [options, setOptions] = useState<Array<{ value: string; label: string }>>(
     []
   );
 
@@ -165,7 +165,7 @@ const Users = () => {
         setFormData={setFormData}
         errors={errors}
         setErrors={setErrors}
-        options={options as { id: string; name: string }[]}
+        options={options as { value: string; label: string }[]}
       />
       <DeleteDialog
         isDeleteOpen={isDeleteOpen}
@@ -444,7 +444,7 @@ const AddUserDialog = ({
   setFormData: React.Dispatch<React.SetStateAction<UserFormData>>;
   errors: Record<string, string>;
   setErrors: React.Dispatch<React.SetStateAction<Record<string, string>>>;
-  options: { id: string; name: string }[];
+  options: { value: string; label: string }[];
 }) => {
   const [submitting, setSubmitting] = useState(false);
 
@@ -685,9 +685,9 @@ const AddUserDialog = ({
                     </SelectTrigger>
                     <SelectContent>
                       {options.map(
-                        (data: { id: string; name: string }, index: number) => (
-                          <SelectItem key={index} value={data.id}>
-                            {data.name}
+                        (data: { value: string; label: string }, index: number) => (
+                          <SelectItem key={index} value={data.value}>
+                            {data.label}
                           </SelectItem>
                         )
                       )}

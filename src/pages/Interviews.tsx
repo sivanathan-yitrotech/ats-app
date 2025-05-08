@@ -29,6 +29,15 @@ const Interviews = () => {
   const limit = 20;
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
+  const [headTotal, setHeadTotal] = useState<{
+      all: number;
+      scheduled: number;
+      completed: number;
+    }>({
+      all: 0,
+      scheduled: 0,
+      completed: 0,
+    });
 
   const loadInterviews = () => {
     axios
@@ -46,7 +55,12 @@ const Interviews = () => {
       })
       .then((response) => {
         setInterviews(response.data.data);
-        setTotal(response.data.data.length);
+        setTotal(response.data.total);
+        setHeadTotal({
+          all: response.data.total,
+          scheduled: response.data.scheduled,
+          completed: response.data.completed,
+        });
       })
       .catch((error) => {
         console.error("API Error:", error.response?.data || error.message);
@@ -71,6 +85,7 @@ const Interviews = () => {
         setFilterBy={setFilterBy}
         setSortBy={setSortBy}
         setSearch={setSearch}
+        headTotal={headTotal}
       />
       <PaginationSection
         total={total}
@@ -87,11 +102,17 @@ const CardSection = ({
   setFilterBy,
   setSortBy,
   setSearch,
+  headTotal,
 }: {
   data: JobCardData[];
   setFilterBy: React.Dispatch<React.SetStateAction<string>>;
   setSortBy: React.Dispatch<React.SetStateAction<string>>;
   setSearch: React.Dispatch<React.SetStateAction<string>>;
+  headTotal: {
+    all:number;
+    scheduled:number;
+    completed:number;
+  }
 }) => {
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState<string>("");
@@ -119,9 +140,9 @@ const CardSection = ({
       <div className="overflow-x-auto flex justify-between gap-4">
         <div className="flex items-center gap-7 mb-4 bg-[#F1F5F9] rounded-lg p-2">
           {[
-            { label: "All", value: 10, color: "bg-blue-400" },
-            { label: "Scheduled", value: 6, color: "bg-yellow-400" },
-            { label: "Completed", value: 4, color: "bg-green-400" },
+            { label: "All", value: headTotal.all, color: "bg-blue-400" },
+            { label: "Scheduled", value: headTotal.scheduled, color: "bg-yellow-400" },
+            { label: "Completed", value: headTotal.completed, color: "bg-green-400" },
           ].map(({ label, value, color }, idx) => (
             <div
               key={idx}

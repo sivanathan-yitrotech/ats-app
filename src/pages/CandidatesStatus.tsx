@@ -28,6 +28,7 @@ import { ucFirst } from "../../utils/common";
 import axios from "axios";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
+import { isArray } from "lodash";
 
 type Candidate = {
   id: string; // Added id property
@@ -38,7 +39,7 @@ type Candidate = {
   company: string;
   status: string;
   recruiters: string[];
-  interviewers: string[];
+  interviewers: string;
 };
 
 const CandidateStatus = () => {
@@ -69,7 +70,7 @@ const CandidateStatus = () => {
     onboardDate?: string;
     interviewDate?: string;
     interviewTime?: string;
-    interviewers?: string[];
+    interviewers?: string;
     mode?: string;
     remarks?: string;
     communication?: number;
@@ -82,7 +83,7 @@ const CandidateStatus = () => {
     onboardDate: "",
     interviewDate: "",
     interviewTime: "",
-    interviewers: [],
+    interviewers: "",
     mode: "",
     remarks: "",
     communication: 0,
@@ -559,7 +560,7 @@ interface UpdateStatusDialogProps {
     onboardDate?: string;
     interviewDate?: string;
     interviewTime?: string;
-    interviewers?: string[];
+    interviewers?: string;
     mode?: string;
     remarks?: string;
     communication?: number;
@@ -1002,9 +1003,9 @@ const UpdateStatusDialog: React.FC<UpdateStatusDialogProps> = ({
                         <div className="w-[70%]">
                           <TagsInput
                             value={
-                              !formData.interviewers
-                                ? []
-                                : formData.interviewers
+                              Array.isArray(formData.interviewers)
+                                ? formData.interviewers
+                                : (formData.interviewers || "").split(",")
                             }
                             onChange={(tags) =>
                               setFormData((prev: typeof formData) => ({
