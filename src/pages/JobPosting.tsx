@@ -307,7 +307,7 @@ const CardSection = ({
           description: data.description,
           descriptionFile: data.descriptionFile,
         });
-        setRange([data.experienceMin,data.experienceMax]);
+        setRange([data.experienceMin, data.experienceMax]);
         setIsOpen(true);
       })
       .catch((error) => {
@@ -549,7 +549,6 @@ const AddJobPostingDialog = ({
 }) => {
   const [errors, setErrors] = useState<any>({});
   const [submitting, setSubmitting] = useState(false);
-  
 
   const validateForm = () => {
     const newErrors: any = {};
@@ -699,7 +698,7 @@ const AddJobPostingDialog = ({
       >
         <DialogHeader>
           <DialogTitle className="my-4 text-xl text-[#0044A3] font-bold text-center">
-          {formData.id ? "Update a Job Opening" : "Add a New Job Opening"}
+            {formData.id ? "Update a Job Opening" : "Add a New Job Opening"}
           </DialogTitle>
           <div className="mt-4 grid grid-cols-2 gap-x-8 gap-y-5">
             {/* Row 1 */}
@@ -1040,12 +1039,12 @@ const AddJobPostingDialog = ({
                 className="bg-[#0044A3] rounded-[3px] hover:bg-blue-950"
               >
                 {submitting
-                ? formData.id
-                  ? "Updating..."
-                  : "Saving..."
-                : formData.id
-                ? "Update"
-                : "Save"}
+                  ? formData.id
+                    ? "Updating..."
+                    : "Saving..."
+                  : formData.id
+                  ? "Update"
+                  : "Save"}
               </Button>
               <Button
                 onClick={() => setIsOpen(false)}

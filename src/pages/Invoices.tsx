@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Menu, Pencil, Download } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ucFirst } from "../../utils/common";
 import {
   Select,
   SelectContent,
@@ -32,6 +31,8 @@ import axios from "axios";
 import { Badge } from "@/components/ui/badge";
 import { Toaster } from "@/components/ui/sonner";
 import { toast } from "sonner";
+import { getUserToken, ucFirst } from "../../utils/common";
+import Config from "@/config.json";
 
 const tableHeaderClass = "text-[#0044A3] font-semibold text-sm py-3 px-6";
 const cellClass = "text-sm font-medium text-gray-700 py-3 px-6";
@@ -59,9 +60,11 @@ const Invoices = () => {
 
   const loadInvoices = () => {
     axios
-      .get(`http://127.0.0.1:8000/get-data`, {
+      .get(`${Config.api_endpoint}fetch_data/invoices/list`, {
+        headers: {
+          Authorization: `Bearer ${getUserToken()}`,
+        },
         params: {
-          type: "invoices-list",
           page,
           limit,
           filterby: filterBy,
@@ -70,8 +73,8 @@ const Invoices = () => {
         },
       })
       .then((response) => {
-        setInvoices(response.data.data);
-        setTotal(55);
+        setInvoices(response.data.data.list);
+        setTotal(response.data.data.total);
       })
       .catch((error) => {
         console.error("API Error:", error.response?.data || error.message);

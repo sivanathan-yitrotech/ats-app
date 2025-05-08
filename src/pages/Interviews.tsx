@@ -231,7 +231,7 @@ const JobCardSection = ({ data }: { data: JobCardData[] }) => {
                 <div className="flex flex-col">
                   <p className="text-xs text-gray-500 mb-1">Interviewers</p>
                   <div className="flex flex-col ml-1">
-                    {Array.isArray(card.interviewers.split(",")) &&
+                    {card.interviewers?.split(",") &&
                       card.interviewers
                         .split(",")
                         .map((recruiter: string, recruiterIndex: number) => (

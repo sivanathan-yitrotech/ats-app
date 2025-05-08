@@ -446,13 +446,13 @@ const CandidateCard = ({
           onboardDate: resData.onboardDate,
           interviewDate: resData.interviewDate,
           interviewTime: resData.interviewTime,
-          interviewers: resData.interviewers.split(","),
+          interviewers: resData.interviewers?.split(","),
           mode: resData.mode,
           remarks: resData.remarks,
           communication: resData.communication,
           technical: resData.technical,
           overall: resData.overall,
-          isFeeded: resData.isFeeded,
+          isFeeded: (resData.communication) ? true:false,
         });
         setEditId(resData.id);
         setData(resData);
@@ -518,19 +518,19 @@ const CandidateCard = ({
                   )}
 
                   {["l1", "l2", "l3"].includes(type) &&
-                    card.interviewers.length > 0 && (
+                    card.interviewers?.split(",").length > 0 && (
                       <div className="flex flex-col">
                         <p className="text-[10px] font-semibold mb-1">
                           Interviewers
                         </p>
                         <div className="flex flex-col gap-1">
-                          {card.interviewers.map(
-                            (interviewer, interviewerIndex) => (
+                          {card.interviewers
+                            ?.split(",")
+                            .map((interviewer, interviewerIndex) => (
                               <p key={interviewerIndex} className="text-[10px]">
                                 {interviewer}
                               </p>
-                            )
-                          )}
+                            ))}
                         </div>
                       </div>
                     )}
@@ -584,6 +584,7 @@ const UpdateStatusDialog: React.FC<UpdateStatusDialogProps> = ({
   const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [submitting, setSubmitting] = useState(false);
+  const [feedLevel, setFeedLevel] = useState("");
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
@@ -623,9 +624,22 @@ const UpdateStatusDialog: React.FC<UpdateStatusDialogProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const [invoiceData, setInvoiceData] = useState({
+  const [invoiceData, setInvoiceData] = useState<{
+    id: string;
+    candidateName: string;
+    clientName: string; // Added clientName property
+    email: string;
+    mobileNumber: string;
+    jobPosting: string;
+    onboardDate: string;
+    recruiters: string[];
+    assignedBy: string;
+    invoiceCurrency: string;
+    invoiceAmount: string;
+  }>({
     id: "",
     candidateName: "",
+    clientName: "", // Added clientName property
     email: "",
     mobileNumber: "",
     jobPosting: "",
@@ -636,31 +650,58 @@ const UpdateStatusDialog: React.FC<UpdateStatusDialogProps> = ({
     invoiceAmount: "",
   });
 
-  const getInvoiceDetails = (id: string) => {
-    axios
-      .get("http://127.0.0.1:8000/get-data", {
-        params: { type: "get-invoice-details", id: id },
-      })
-      .then((response) => {
-        const resData = response.data.data;
-        setInvoiceData({
-          id: resData.id,
-          candidateName: resData.candidateName,
-          email: resData.email,
-          mobileNumber: resData.mobileNumber,
-          jobPosting: resData.jobPosting,
-          onboardDate: resData.onboardDate,
-          recruiters: resData.recruiters,
-          assignedBy: resData.assignedBy,
-          invoiceCurrency: resData.invoiceCurrency,
-          invoiceAmount: resData.invoiceAmount,
-        });
-        setIsOpen(false);
-        setIsInvoiceOpen(true);
-      })
-      .catch((error) => {
-        console.error("API Error:", error);
-      });
+  const getInvoiceDetails = (resData: {
+    id: string;
+    candidateName: string;
+    clientName: string;
+    email: string;
+    mobileNumber: string;
+    jobPosting: string;
+    onboardDate: string;
+    recruiters: string[];
+    assignedBy: string;
+    invoiceCurrency: string;
+    invoiceAmount: string;
+  }) => {
+    setInvoiceData({
+      id: resData.id,
+      candidateName: resData.candidateName,
+      clientName: resData.clientName,
+      email: resData.email,
+      mobileNumber: resData.mobileNumber,
+      jobPosting: resData.jobPosting,
+      onboardDate: resData.onboardDate,
+      recruiters: resData.recruiters,
+      assignedBy: resData.assignedBy,
+      invoiceCurrency: resData.invoiceCurrency,
+      invoiceAmount: resData.invoiceAmount,
+    });
+    setIsOpen(false);
+    setIsInvoiceOpen(true);
+    // axios
+    //   .get("http://127.0.0.1:8000/get-data", {
+    //     params: { type: "get-invoice-details", id: id },
+    //   })
+    //   .then((response) => {
+    //     const resData = response.data.data;
+    //     setInvoiceData({
+    //       id: resData.id,
+    //       candidateName: resData.candidateName,
+    //       email: resData.email,
+    //       mobileNumber: resData.mobileNumber,
+    //       jobPosting: resData.jobPosting,
+    //       onboardDate: resData.onboardDate,
+    //       recruiters: resData.recruiters,
+    //       assignedBy: resData.assignedBy,
+    //       invoiceCurrency: resData.invoiceCurrency,
+    //       invoiceAmount: resData.invoiceAmount,
+    //     });
+    //     setIsOpen(false);
+    //     setIsInvoiceOpen(true);
+    //   })
+    //   .catch((error) => {
+    //     console.error("API Error:", error);
+    //   });
   };
 
   const handleSubmit = async () => {
@@ -671,7 +712,7 @@ const UpdateStatusDialog: React.FC<UpdateStatusDialogProps> = ({
       const data = new FormData();
 
       Object.entries(formData).forEach(([key, value]) => {
-        if (value !== null && value !== undefined && key != "isFeeded") {
+        if (value !== null && value !== undefined) {
           data.append(key, String(value));
         }
       });
@@ -693,16 +734,15 @@ const UpdateStatusDialog: React.FC<UpdateStatusDialogProps> = ({
       );
 
       if (formData.communication) {
-        let feedbackLevel = "l3";
+        let feedbackLevel = "";
         if (status === "l2") {
           feedbackLevel = "l1";
         } else if (status === "l3") {
           feedbackLevel = "l2";
         }
-      
-        data.append("feedback_level", feedbackLevel);
+        setFeedLevel(feedbackLevel);
+        data.append("feedback_level", feedLevel);
       }
-      
 
       // }
 
@@ -765,7 +805,7 @@ const UpdateStatusDialog: React.FC<UpdateStatusDialogProps> = ({
           }
         }
         if (status === "onboard") {
-          getInvoiceDetails(formData.id);
+          getInvoiceDetails(response?.data?.data?.[0]);
         } else {
           loadCandidates();
         }
@@ -927,8 +967,13 @@ const UpdateStatusDialog: React.FC<UpdateStatusDialogProps> = ({
               </div>
 
               {/* Interview Scheduling */}
+              {/* {((status == "l1" && getData.status == "sourced") ||
+                (getData.status == "l1" && formData.isFeeded) ||
+                (getData.status == "l2" && formData.isFeeded)) && ( */}
               {(status === "l1" ||
                 (["l2", "l3"].includes(status) && formData.isFeeded)) && (
+
+              
                 <div className="space-y-6">
                   <h2 className="text-lg text-[#0044A3] font-semibold text-center mb-4">
                     Schedule Interview
@@ -1030,7 +1075,20 @@ const UpdateStatusDialog: React.FC<UpdateStatusDialogProps> = ({
               )}
 
               {/* Feedback Submission */}
+
+              {/* {(((getData.status == "l1" ||
+                getData.status == "l2" ||
+                getData.status == "l3") &&
+                (status == "rejected" || status == "offered")) ||
+                (getData.status == "l1" &&
+                  (status == "l2" || status == "l3") &&
+                  !formData.isFeeded) ||
+                (getData.status == "l2" &&
+                  status == "l3" &&
+                  !formData.isFeeded)) && ( */}
               {["l2", "l3"].includes(status) && !formData.isFeeded && (
+
+              
                 <div className="space-y-6">
                   <h2 className="text-lg text-[#0044A3] font-semibold text-center mb-4">
                     Submit Feedback
@@ -1174,18 +1232,20 @@ const InvoiceDialog = ({
   const generateInvoice = async (id: string) => {
     try {
       const data = new FormData();
-      data.append("type", "generate-invoice");
-      data.append("id", id);
+      data.append("id", invoiceData.id);
+      data.append("clientName", invoiceData.clientName);
+      data.append("candidateName", invoiceData.candidateName);
+      data.append("jobTitle", invoiceData.jobPosting);
+      data.append("InvoiceAmount", invoiceData.invoiceAmount);
+      data.append("status", "pending");
 
-      const response = await axios.post(
-        "http://127.0.0.1:8000/post-data",
-        data,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+      data.append("user_id", getUserData().id);
+      const response = await axios["post"](`${Config.api_endpoint}interview_schedulegenerate_invoice/create`, data, {
+              headers: {
+                Authorization: `Bearer ${getUserToken()}`,
+                "Content-Type": "application/x-www-form-urlencoded",
+              },
+            })
 
       if (response.status === 200) {
         setIsInvoiceOpen(false);
