@@ -171,7 +171,7 @@ const CandidateStatus = () => {
         setEditId={setEditId}
         status={status}
         setData={setData}
-        formData={formData}
+        // formData={formData}
         setFormData={setFormData}
       />
       <UpdateStatusDialog
@@ -209,7 +209,7 @@ const CardSection = ({
   setEditId,
   setStatus,
   setData,
-  formData,
+  // formData,
   setFormData,
 }: {
   data: any;
@@ -229,7 +229,7 @@ const CardSection = ({
   setStatus: React.Dispatch<React.SetStateAction<string>>;
   setData: any;
   status: string;
-  formData: any;
+  // formData: any;
   setFormData: any;
 }) => {
   const [open, setOpen] = useState(false);
@@ -375,7 +375,7 @@ const CardSection = ({
                 setEditId={setEditId}
                 setStatus={setStatus}
                 setData={setData}
-                formData={formData}
+                // formData={formData}
                 setFormData={setFormData}
               />
             </div>
@@ -419,7 +419,7 @@ const CandidateCard = ({
   setData,
   setStatus,
   setEditId,
-  formData,
+  // formData,
   setFormData,
 }: {
   data: Candidate[];
@@ -429,7 +429,7 @@ const CandidateCard = ({
   setData: any;
   setStatus: React.Dispatch<React.SetStateAction<string>>;
   setEditId: React.Dispatch<React.SetStateAction<string>>;
-  formData: any;
+  // formData: any;
   setFormData: any;
 }) => {
   const editData = (id: string) => {
@@ -452,7 +452,7 @@ const CandidateCard = ({
           communication: resData.communication,
           technical: resData.technical,
           overall: resData.overall,
-          isFeeded: (resData.communication) ? true:false,
+          isFeeded: resData.communication ? true : false,
         });
         setEditId(resData.id);
         setData(resData);
@@ -526,7 +526,7 @@ const CandidateCard = ({
                         <div className="flex flex-col gap-1">
                           {card.interviewers
                             ?.split(",")
-                            .map((interviewer, interviewerIndex) => (
+                            .map((interviewer: string, interviewerIndex: number) => (
                               <p key={interviewerIndex} className="text-[10px]">
                                 {interviewer}
                               </p>
@@ -584,25 +584,18 @@ const UpdateStatusDialog: React.FC<UpdateStatusDialogProps> = ({
   const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [submitting, setSubmitting] = useState(false);
-  const [feedLevel, setFeedLevel] = useState("");
+  const [isFeeded, setIsFeeded] = useState(false);
 
-  const validateForm = () => {
+  const validateForm = (showInterviewSchedule: boolean, showInterviewFeedback: boolean, isFeeded: boolean) => {
     const newErrors: { [key: string]: string } = {};
 
-    if (status === "offered" && !formData.offeredDate) {
+    if (status === "offered" && !formData.offeredDate && isFeeded) {
       newErrors.offeredDate = "Offered Date is required.";
     }
     if (status === "onboard" && !formData.onboardDate) {
       newErrors.onboardDate = "Onboard Date is required.";
     }
-    if (
-      (status === "l1" ||
-        (["l2", "l3"].includes(status) && formData.isFeeded)) &&
-      (!formData.interviewDate ||
-        !formData.interviewTime ||
-        !formData.interviewers ||
-        !formData.mode)
-    ) {
+    if (showInterviewSchedule) {
       if (!formData.interviewDate)
         newErrors.interviewDate = "Interview Date is required.";
       if (!formData.interviewTime)
@@ -612,7 +605,7 @@ const UpdateStatusDialog: React.FC<UpdateStatusDialogProps> = ({
       if (!formData.mode) newErrors.mode = "Mode is required.";
     }
 
-    if (["l2", "l3"].includes(status) && !formData.isFeeded) {
+    if (showInterviewFeedback) {
       if (!formData.remarks) newErrors.remarks = "Remarks are required.";
       if (!formData.communication)
         newErrors.communication = "Rate communication.";
@@ -678,38 +671,17 @@ const UpdateStatusDialog: React.FC<UpdateStatusDialogProps> = ({
     });
     setIsOpen(false);
     setIsInvoiceOpen(true);
-    // axios
-    //   .get("http://127.0.0.1:8000/get-data", {
-    //     params: { type: "get-invoice-details", id: id },
-    //   })
-    //   .then((response) => {
-    //     const resData = response.data.data;
-    //     setInvoiceData({
-    //       id: resData.id,
-    //       candidateName: resData.candidateName,
-    //       email: resData.email,
-    //       mobileNumber: resData.mobileNumber,
-    //       jobPosting: resData.jobPosting,
-    //       onboardDate: resData.onboardDate,
-    //       recruiters: resData.recruiters,
-    //       assignedBy: resData.assignedBy,
-    //       invoiceCurrency: resData.invoiceCurrency,
-    //       invoiceAmount: resData.invoiceAmount,
-    //     });
-    //     setIsOpen(false);
-    //     setIsInvoiceOpen(true);
-    //   })
-    //   .catch((error) => {
-    //     console.error("API Error:", error);
-    //   });
   };
 
-  const handleSubmit = async () => {
-    if (!validateForm()) return;
+  const handleSubmit = async (showInterviewSchedule: boolean, showInterviewFeedback: boolean) => {
+    setIsFeeded(getData.communication ? true : false);
+    if (!validateForm(showInterviewSchedule,showInterviewFeedback,isFeeded)) return;
 
     setSubmitting(true);
     try {
       const data = new FormData();
+
+      
 
       Object.entries(formData).forEach(([key, value]) => {
         if (value !== null && value !== undefined) {
@@ -717,7 +689,6 @@ const UpdateStatusDialog: React.FC<UpdateStatusDialogProps> = ({
         }
       });
 
-      // if (["l2", "l3"].includes(status) && !formData.isFeeded) {
       data.append(
         "communication",
         String(
@@ -733,18 +704,15 @@ const UpdateStatusDialog: React.FC<UpdateStatusDialogProps> = ({
         String(formData.overall === undefined ? "" : formData.overall)
       );
 
+      let feedbackLevel = "";
       if (formData.communication) {
-        let feedbackLevel = "";
         if (status === "l2") {
           feedbackLevel = "l1";
         } else if (status === "l3") {
           feedbackLevel = "l2";
         }
-        setFeedLevel(feedbackLevel);
-        data.append("feedback_level", feedLevel);
       }
-
-      // }
+      data.append("feedback_level", feedbackLevel);
 
       data.append("status", status);
       data.append("remarks", formData.remarks || "");
@@ -785,24 +753,18 @@ const UpdateStatusDialog: React.FC<UpdateStatusDialogProps> = ({
           isFeeded: false,
         });
 
-        if (!formData.isFeeded && ["l2", "l3"].includes(status)) {
-          if (status != "onboard") {
-            toast.success("Feedback submitted successfully");
-            setFormData((prev: any) => ({ ...prev, isFeeded: true }));
-          }
-        } else if (
-          status === "l1" ||
-          (["l2", "l3"].includes(status) && formData.isFeeded)
-        ) {
-          if (status != "onboard") {
-            toast.success("Interview scheduled successfully");
-            setIsOpen(false);
-          }
+        if (showInterviewSchedule) {
+          toast.success("Interview scheduled successfully");
+          setIsFeeded(false);
+          setIsOpen(false);
+        } else if (showInterviewFeedback) {
+          toast.success("Feedback submitted successfully");
+          setIsFeeded(true);
+          setFormData((prev: any) => ({ ...prev, isFeeded: true }));
         } else {
-          if (status != "onboard") {
-            toast.success("Status updated successfully");
-            setIsOpen(false);
-          }
+          toast.success("Status updated successfully");
+          // setIsFeeded(false);
+          setIsOpen(false);
         }
         if (status === "onboard") {
           getInvoiceDetails(response?.data?.data?.[0]);
@@ -825,12 +787,33 @@ const UpdateStatusDialog: React.FC<UpdateStatusDialogProps> = ({
     setFormData((prev: any) => ({ ...prev, [name]: value }));
   };
 
+  const showInterviewSchedule =
+    (getData.status === "sourced" && status === "l1") ||
+    (getData.status === "l1" && status === "l1" && isFeeded === false) ||
+    (getData.status === "l1" && status === "l2" && isFeeded === true) ||
+    (getData.status === "l2" && status === "l2" && isFeeded === false) ||
+    (getData.status === "l2" && status === "l3" && isFeeded === true) ||
+    (getData.status === "l3" && status === "l3" && isFeeded === false);
+
+  const showInterviewFeedback =
+    (getData.status === "l1" &&
+      ["rejected", "offered", "onboard", "denied", "l2", "l3"].includes(
+        status
+      ) &&
+      isFeeded === false) ||
+    (getData.status === "l2" &&
+      ["rejected", "offered", "onboard", "denied", "l3"].includes(status) &&
+      isFeeded === false) ||
+    (getData.status === "l3" &&
+      ["rejected", "offered", "onboard", "denied"].includes(status) &&
+      isFeeded === false);
+
   return (
     <>
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent
           style={
-            ["l1", "l2", "l3"].includes(status)
+            showInterviewSchedule || showInterviewFeedback
               ? {
                   maxWidth: "80%",
                   maxHeight: "90vh",
@@ -847,7 +830,7 @@ const UpdateStatusDialog: React.FC<UpdateStatusDialogProps> = ({
 
             <div
               className={`${
-                ["l1", "l2", "l3"].includes(status)
+                showInterviewSchedule || showInterviewFeedback
                   ? "grid grid-cols-1 sm:grid-cols-2 gap-8"
                   : ""
               }`}
@@ -924,7 +907,7 @@ const UpdateStatusDialog: React.FC<UpdateStatusDialogProps> = ({
                 </div>
 
                 {/* Offered Date */}
-                {status === "offered" && (
+                {status === "offered" && isFeeded && (
                   <div className="flex flex-col gap-1 w-full">
                     <div className="flex items-center gap-4">
                       <Label className="w-[30%]">Offered Date</Label>
@@ -967,13 +950,8 @@ const UpdateStatusDialog: React.FC<UpdateStatusDialogProps> = ({
               </div>
 
               {/* Interview Scheduling */}
-              {/* {((status == "l1" && getData.status == "sourced") ||
-                (getData.status == "l1" && formData.isFeeded) ||
-                (getData.status == "l2" && formData.isFeeded)) && ( */}
-              {(status === "l1" ||
-                (["l2", "l3"].includes(status) && formData.isFeeded)) && (
 
-              
+              {showInterviewSchedule && (
                 <div className="space-y-6">
                   <h2 className="text-lg text-[#0044A3] font-semibold text-center mb-4">
                     Schedule Interview
@@ -1023,7 +1001,11 @@ const UpdateStatusDialog: React.FC<UpdateStatusDialogProps> = ({
                         <Label className="w-[30%]">Interviewer</Label>
                         <div className="w-[70%]">
                           <TagsInput
-                            value={formData.interviewers}
+                            value={
+                              !formData.interviewers
+                                ? []
+                                : formData.interviewers
+                            }
                             onChange={(tags) =>
                               setFormData((prev: typeof formData) => ({
                                 ...prev,
@@ -1075,20 +1057,7 @@ const UpdateStatusDialog: React.FC<UpdateStatusDialogProps> = ({
               )}
 
               {/* Feedback Submission */}
-
-              {/* {(((getData.status == "l1" ||
-                getData.status == "l2" ||
-                getData.status == "l3") &&
-                (status == "rejected" || status == "offered")) ||
-                (getData.status == "l1" &&
-                  (status == "l2" || status == "l3") &&
-                  !formData.isFeeded) ||
-                (getData.status == "l2" &&
-                  status == "l3" &&
-                  !formData.isFeeded)) && ( */}
-              {["l2", "l3"].includes(status) && !formData.isFeeded && (
-
-              
+              {showInterviewFeedback && (
                 <div className="space-y-6">
                   <h2 className="text-lg text-[#0044A3] font-semibold text-center mb-4">
                     Submit Feedback
@@ -1181,15 +1150,17 @@ const UpdateStatusDialog: React.FC<UpdateStatusDialogProps> = ({
               <Button
                 disabled={submitting}
                 className="bg-[#0044A3] text-white px-6 py-3 rounded-md hover:bg-blue-950"
-                onClick={handleSubmit}
+                onClick={() =>
+                  handleSubmit(showInterviewSchedule, showInterviewFeedback)
+                }
               >
                 {submitting
-                  ? ["l2", "l3"].includes(status) && formData.isFeeded
+                  ? showInterviewSchedule
                     ? "Submitting..."
                     : status === "onboard"
                     ? "Generating..."
                     : "Updating..."
-                  : ["l2", "l3"].includes(status) && !formData.isFeeded
+                  : showInterviewFeedback
                   ? "Submit Feedback"
                   : status === "onboard"
                   ? "Update & Generate Invoice"
@@ -1229,7 +1200,7 @@ const InvoiceDialog = ({
   invoiceData: any;
   loadCandidates: () => void;
 }) => {
-  const generateInvoice = async (id: string) => {
+  const generateInvoice = async () => {
     try {
       const data = new FormData();
       data.append("id", invoiceData.id);
@@ -1240,12 +1211,16 @@ const InvoiceDialog = ({
       data.append("status", "pending");
 
       data.append("user_id", getUserData().id);
-      const response = await axios["post"](`${Config.api_endpoint}interview_schedulegenerate_invoice/create`, data, {
-              headers: {
-                Authorization: `Bearer ${getUserToken()}`,
-                "Content-Type": "application/x-www-form-urlencoded",
-              },
-            })
+      const response = await axios["post"](
+        `${Config.api_endpoint}interview_schedulegenerate_invoice/create`,
+        data,
+        {
+          headers: {
+            Authorization: `Bearer ${getUserToken()}`,
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        }
+      );
 
       if (response.status === 200) {
         setIsInvoiceOpen(false);
@@ -1332,14 +1307,14 @@ const InvoiceDialog = ({
             Invoice Amount
           </Label>
           <span className="w-[70%] text-[#4B5563] text-sm">
-            {invoiceData.invoiceCurrency}
+            {invoiceData.invoiceCurrency=="1" ? "₹":"$"}
             {invoiceData.invoiceAmount}
           </span>
         </div>
         <div className="flex justify-center gap-6 my-3">
           <Button
             className="bg-[#0044A3] text-white px-6 py-3 rounded-md hover:bg-blue-950"
-            onClick={() => generateInvoice(invoiceData.id)}
+            onClick={() => generateInvoice()}
           >
             Generate Invoice
           </Button>

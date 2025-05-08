@@ -778,15 +778,15 @@ const AddJobPostingDialog = ({
                         target: { name: "currency", value: val },
                       } as any)
                     }
-                    defaultValue=""
+                    defaultValue="1"
                     value={formData.currency}
                   >
                     <SelectTrigger className="w-[30%] placeholder:text-[13px] px-4 py-5">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="1">$</SelectItem>
-                      <SelectItem value="2">₹</SelectItem>
+                    <SelectItem value="1">₹</SelectItem>
+                    <SelectItem value="2">$</SelectItem>
                     </SelectContent>
                   </Select>
                   <Input

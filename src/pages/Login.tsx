@@ -79,9 +79,9 @@ export default function Login() {
       id: "1bd9799a-0773-495e-90fa-a6635ee6b562",
       firstName: "Sivanathan",
       lastName: "T",
-      email: "siva@gmail.com",
+      email: email,
       phoneNumber: "9809876878",
-      role: "manager",
+      role: (email=="manager@mailinator.com") ? "manager":"recruiter",
       profile: "https://i.pravatar.cc/301",
     };
     const token =

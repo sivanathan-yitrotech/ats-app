@@ -140,7 +140,7 @@ const Candidates = () => {
     country: "",
     city: "",
     joiningDate: "",
-    ctc_symble: "",
+    ctc_symble: "1",
     ctc: "",
     current_ctc: "",
     workMode: "onsite",
@@ -304,7 +304,7 @@ const CardSection = ({
                   country: "",
                   city: "",
                   joiningDate: "",
-                  ctc_symble: "",
+                  ctc_symble: "1",
                   ctc: "",
                   current_ctc: "",
                   workMode: "onsite",
@@ -837,7 +837,7 @@ const AddCandidateDialog = ({
               <Label className="text-[#1E293B] w-[30%]">CTC/Year</Label>
               <Select
                 value={formData.ctc_symble}
-                defaultValue="$"
+                defaultValue="1"
                 onValueChange={(val) =>
                   handleChange({
                     target: { name: "ctc_symble", value: val },
@@ -848,8 +848,8 @@ const AddCandidateDialog = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="₹">₹</SelectItem>
-                  <SelectItem value="$">$</SelectItem>
+                  <SelectItem value="1">₹</SelectItem>
+                  <SelectItem value="2">$</SelectItem>
                 </SelectContent>
               </Select>
               <div className="w-[55%] flex gap-1">
